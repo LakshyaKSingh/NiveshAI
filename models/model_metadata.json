@@ -1,0 +1,68 @@
+{
+  "project": "TradePilot ML Stock Direction Prediction",
+  "timestamp_utc": "2026-10-27T22:27:35.120391+00:00",
+  "random_seed": 42,
+  "selected_model": "Random_Forest",
+  "features": [
+    "return_1d",
+    "return_5d",
+    "return_10d",
+    "volatility_10d",
+    "volume_change",
+    "RSI_14",
+    "MACD",
+    "MACD_signal"
+  ],
+  "feature_count": 8,
+  "target_column": "target",
+  "target_classes": [
+    "DOWN",
+    "NEUTRAL",
+    "UP"
+  ],
+  "target_definition": "future_return_5d > 0.01 -> UP, future_return_5d < -0.01 -> DOWN, otherwise NEUTRAL",
+  "split_periods": {
+    "train_rows": 34864,
+    "train_purged_rows": 250,
+    "train_start": "2021-03-16",
+    "train_end": "2023-12-21",
+    "val_rows": 12350,
+    "val_purged_rows": 250,
+    "val_start": "2024-01-02",
+    "val_end": "2024-12-23",
+    "test_rows": 12250,
+    "test_start": "2025-01-02",
+    "test_end": "2025-12-23",
+    "purge_days_per_symbol": 5
+  },
+  "pipeline_steps": [
+    "classifier"
+  ],
+  "model_parameters": {
+    "bootstrap": "True",
+    "ccp_alpha": "0.0",
+    "class_weight": "balanced",
+    "criterion": "gini",
+    "max_depth": "8",
+    "max_features": "sqrt",
+    "max_leaf_nodes": "None",
+    "max_samples": "None",
+    "min_impurity_decrease": "0.0",
+    "min_samples_leaf": "5",
+    "min_samples_split": "10",
+    "min_weight_fraction_leaf": "0.0",
+    "monotonic_cst": "None",
+    "n_estimators": "100",
+    "n_jobs": "-1",
+    "oob_score": "False",
+    "random_state": "42",
+    "verbose": "0",
+    "warm_start": "False"
+  },
+  "validation_macro_f1": 0.3427885534075971,
+  "validation_balanced_accuracy": 0.3725102552203321,
+  "validation_accuracy": 0.345748987854251,
+  "test_macro_f1": 0.3557658894804481,
+  "test_balanced_accuracy": 0.3736015765301142,
+  "test_accuracy": 0.3604081632653061
+}

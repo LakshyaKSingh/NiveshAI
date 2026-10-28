@@ -1,0 +1,67 @@
+{
+  "validation_2024": {
+    "strategy_metrics": {
+      "final_equity": 110393.09972386781,
+      "total_return": 0.10393099723867816,
+      "annualized_return": 0.10436595890096534,
+      "annualized_volatility": 0.11488844685404291,
+      "sharpe_ratio": 0.9246122869342859,
+      "max_drawdown": -0.061610320766064965,
+      "total_trades": 236,
+      "win_rate": 0.5677966101694916,
+      "profit_factor": 1.2604721999541175,
+      "avg_win_pct": 0.029910672520494137,
+      "avg_loss_pct": -0.03066232527063906,
+      "turnover": 23.38175442435144,
+      "total_costs": 5041.677139443465,
+      "avg_exposure": 0.4145426012783522,
+      "time_in_market_pct": 0.9482071713147411
+    },
+    "benchmark_metrics": {
+      "benchmark_name": "Equal_Weight_Buy_and_Hold",
+      "total_return": 0.33351380593208524,
+      "annualized_return": 0.3365878115846088,
+      "annualized_volatility": 0.14498307356064916,
+      "sharpe_ratio": 2.074434001092464,
+      "max_drawdown": -0.09571279445964433
+    }
+  },
+  "test_2025": {
+    "strategy_metrics": {
+      "final_equity": 109940.55067844919,
+      "total_return": 0.09940550678449189,
+      "annualized_return": 0.10066152737411405,
+      "annualized_volatility": 0.22723428790824057,
+      "sharpe_ratio": 0.5353658574403078,
+      "max_drawdown": -0.22495481264275402,
+      "total_trades": 343,
+      "win_rate": 0.5189504373177842,
+      "profit_factor": 1.0814683916308923,
+      "avg_win_pct": 0.04300974759023266,
+      "avg_loss_pct": -0.04199892048788904,
+      "turnover": 33.40617427012149,
+      "total_costs": 6928.285957638365,
+      "avg_exposure": 0.5880254836077258,
+      "time_in_market_pct": 0.9759036144578314
+    },
+    "benchmark_metrics": {
+      "benchmark_name": "Equal_Weight_Buy_and_Hold",
+      "total_return": 0.2628935246307873,
+      "annualized_return": 0.2676567807076293,
+      "annualized_volatility": 0.206128086271217,
+      "sharpe_ratio": 1.2530793700094873,
+      "max_drawdown": -0.21414840020653578
+    }
+  },
+  "config": {
+    "initial_capital": 100000.0,
+    "max_positions": 10,
+    "allocation_per_position": 0.1,
+    "entry_threshold": 0.4,
+    "holding_period_days": 5,
+    "slippage_bps": 5.0,
+    "commission_bps": 5.0,
+    "allow_short": false,
+    "benchmark_name": "Buy_and_Hold_Equal_Weight"
+  }
+}

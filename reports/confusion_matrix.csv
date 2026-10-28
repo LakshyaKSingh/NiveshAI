@@ -1,0 +1,13 @@
+model,split,true_class,pred_DOWN,pred_NEUTRAL,pred_UP
+Majority_Baseline,validation_2024,DOWN,0,0,3891
+Majority_Baseline,validation_2024,NEUTRAL,0,0,2979
+Majority_Baseline,validation_2024,UP,0,0,5480
+Logistic_Regression,validation_2024,DOWN,809,2384,698
+Logistic_Regression,validation_2024,NEUTRAL,451,2070,458
+Logistic_Regression,validation_2024,UP,1289,3191,1000
+Random_Forest,validation_2024,DOWN,1074,1878,939
+Random_Forest,validation_2024,NEUTRAL,622,1686,671
+Random_Forest,validation_2024,UP,1512,2458,1510
+Random_Forest,test_2025,DOWN,1283,1451,1506
+Random_Forest,test_2025,NEUTRAL,609,1155,758
+Random_Forest,test_2025,UP,1752,1759,1977
