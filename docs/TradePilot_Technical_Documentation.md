@@ -10,12 +10,13 @@
 | :--- | :--- |
 | **Project Title** | TradePilot — ML-Based Automated Stock Trading and Portfolio Management System |
 | **Document Classification** | Complete Technical Documentation & System Specification |
-| **Software Version** | `0.2.0` (MLOps-Enabled with DVC & MLflow) |
+| **Software Version** | `1.0.0` (Production Application: FastAPI, Paper Trading Agent, Next.js Dashboard, AWS Ready) |
 | **Date of Verification** | October 2026 |
 | **Target Audience** | Academic Evaluators, Engineering Faculty, Technical Reviewers, Software Engineers, Quant Researchers |
-| **System Implementation** | Python 3.10+, Scikit-Learn, Pandas, NumPy, Alpaca Market Data API, DVC, MLflow |
-| **Primary Code Location** | `src/tradepilot/` |
-| **Test Suite Status** | 17 of 17 Automated Tests Passing (`pytest -v`) |
+| **System Implementation** | Python 3.10+, FastAPI, Next.js 16, TypeScript, Tailwind CSS, SQLAlchemy 2.0, Alembic, Scikit-Learn, Alpaca API, DVC, MLflow, AWS ECS Fargate, Terraform |
+| **Primary Code Location** | `src/tradepilot/`, `frontend/`, `deploy/` |
+| **Test Suite Status** | 36 of 36 Automated Tests Passing (`pytest -v`) |
+
 
 ---
 
@@ -96,6 +97,11 @@
     - [11.7 MLOps Experiment Tracking: `tradepilot.tracking`](#117-mlops-experiment-tracking-tradepilottracking)
     - [11.8 Automated Pipelines & DVC Specification: `tradepilot.pipelines` and `dvc.yaml`](#118-automated-pipelines--dvc-specification-tradepilotpipelines-and-dvcyaml)
     - [11.9 Root Operational Entrypoints](#119-root-operational-entrypoints)
+    - [11.10 REST API and Authentication Service: `tradepilot.api`](#1110-rest-api-and-authentication-service-tradepilotapi)
+    - [11.11 Relational Persistence & Schema Migrations: `tradepilot.db`](#1111-relational-persistence--schema-migrations-tradepilotdb)
+    - [11.12 Execution Engine, Broker Adapters & Centralized Risk Engine: `tradepilot.execution`](#1112-execution-engine-broker-adapters--centralized-risk-engine-tradepilotexecution)
+    - [11.13 Modern Trading Dashboard: `frontend/`](#1113-modern-trading-dashboard-frontend)
+    - [11.14 Cloud Deployment, Docker & Terraform IaC: `deploy/` and `.github/`](#1114-cloud-deployment-docker--terraform-iac-deploy-and-github)
 12. [Installation, Environment Setup, and Execution Guide](#12-installation-environment-setup-and-execution-guide)
     - [12.1 Environment Prerequisites](#121-environment-prerequisites)
     - [12.2 Windows PowerShell Virtual Environment Activation](#122-windows-powershell-virtual-environment-activation)
@@ -104,11 +110,14 @@
     - [12.5 Executing DVC Pipelines, Reproducibility, and Backtesting](#125-executing-dvc-pipelines-reproducibility-and-backtesting)
     - [12.6 Launching MLflow UI and Experiment Audit](#126-launching-mlflow-ui-and-experiment-audit)
     - [12.7 Locating and Auditing Generated Artifacts](#127-locating-and-auditing-generated-artifacts)
-    - [12.8 Troubleshooting Common Operational Faults](#128-troubleshooting-common-operational-faults)
+    - [12.8 Database Schema Setup & Alembic Migrations](#128-database-schema-setup--alembic-migrations)
+    - [12.9 Launching the Full Production Stack (API, Worker, Frontend)](#129-launching-the-full-production-stack-api-worker-frontend)
+    - [12.10 Multi-Container Deployment via Docker Compose](#1210-multi-container-deployment-via-docker-compose)
+    - [12.11 Troubleshooting Common Operational Faults](#1211-troubleshooting-common-operational-faults)
 13. [Quality Assurance, Automated Testing, and Reproducibility](#13-quality-assurance-automated-testing-and-reproducibility)
     - [13.1 Testing Architecture and Test Discovery](#131-testing-architecture-and-test-discovery)
-    - [13.2 Breakdown of Automated Unit and Integration Tests](#132-breakdown-of-automated-unit-and-integration-tests)
-    - [13.3 Test Verification Log and Passing Assertions](#133-test-verification-log-and-passing-assertions)
+    - [13.2 Breakdown of 36 Automated Unit and Integration Tests](#132-breakdown-of-36-automated-unit-and-integration-tests)
+    - [13.3 Test Verification Log and Passing Assertions (36 Passed)](#133-test-verification-log-and-passing-assertions-36-passed)
     - [13.4 Deterministic Execution Guarantees](#134-deterministic-execution-guarantees)
     - [13.5 Test Scope Boundaries: What Automated Tests Do and Do Not Guarantee](#135-test-scope-boundaries-what-automated-tests-do-and-do-not-guarantee)
 14. [Known Limitations, Market Realities, and Quant Risks](#14-known-limitations-market-realities-and-quant-risks)
@@ -124,17 +133,37 @@
     - [15.3 Paper Trading Isolation from Real Capital Execution](#153-paper-trading-isolation-from-real-capital-execution)
     - [15.4 Structured Logging, Auditability, and Run Failure Handling](#154-structured-logging-auditability-and-run-failure-handling)
 16. [Future Development and Research Roadmap](#16-future-development-and-research-roadmap)
-    - [16.1 Phase 1: Operational Hardening and Version Control](#161-phase-1-operational-hardening-and-version-control)
+    - [16.1 Phase 1: Operational Hardening and CI/CD Automation [COMPLETED]](#161-phase-1-operational-hardening-and-cicd-automation-completed)
     - [16.2 Phase 2: Dynamic Feature Engineering and Target Labeling](#162-phase-2-dynamic-feature-engineering-and-target-labeling)
     - [16.3 Phase 3: Walk-Forward Validation and Gradient Boosting Ensembles](#163-phase-3-walk-forward-validation-and-gradient-boosting-ensembles)
     - [16.4 Phase 4: MLOps Integration (MLflow and DVC) [COMPLETED]](#164-phase-4-mlops-integration-mlflow-and-dvc-completed)
-    - [16.5 Phase 5: Dynamic Risk Management and Sizing Strategies](#165-phase-5-dynamic-risk-management-and-sizing-strategies)
-    - [16.6 Phase 6: Automated Paper-Trading Execution Service](#166-phase-6-automated-paper-trading-execution-service)
+    - [16.5 Phase 5: Dynamic Risk Management and Pre-Trade Safeguards [COMPLETED]](#165-phase-5-dynamic-risk-management-and-pre-trade-safeguards-completed)
+    - [16.6 Phase 6: Automated Paper-Trading Execution Service & Next.js Dashboard [COMPLETED]](#166-phase-6-automated-paper-trading-execution-service--nextjs-dashboard-completed)
+    - [16.7 Phase 7: Real-Time WebSockets, Order Book Depth & L2 Feed Integration](#167-phase-7-real-time-websockets-order-book-depth--l2-feed-integration)
+    - [16.8 Phase 8: Multi-Agent LLM Sentiment Fusion & Alternative Data](#168-phase-8-multi-agent-llm-sentiment-fusion--alternative-data)
 17. [Technical and Financial Glossary](#17-technical-and-financial-glossary)
 18. [Conclusion and Academic Project Assessment](#18-conclusion-and-academic-project-assessment)
 19. [Documentation Verification and Audit Log](#19-documentation-verification-and-audit-log)
+    - [19.1 Verification Scope and Methodology](#191-verification-scope-and-methodology)
+    - [19.2 Automated Test Execution Verification](#192-automated-test-execution-verification)
+    - [19.3 Dataset and Artifact Integrity Audit](#193-dataset-and-artifact-integrity-audit)
+    - [19.4 Verified Empirical Metrics](#194-verified-empirical-metrics)
+    - [19.5 MLOps Pipeline and Experiment Tracking Verification](#195-mlops-pipeline-and-experiment-tracking-verification)
+    - [19.6 Documented Discrepancies and Codebase Evolution](#196-documented-discrepancies-and-codebase-evolution)
+    - [19.7 Security and Leakage Audit](#197-security-and-leakage-audit)
+    - [19.8 Version 1.0.0 Production Application Release Audit](#198-version-100-production-application-release-audit)
+20. [Production Application Architecture, API, Agent Execution, and Cloud Deployment](#20-production-application-architecture-api-agent-execution-and-cloud-deployment)
+    - [20.1 Architectural Expansion Overview](#201-architectural-expansion-overview)
+    - [20.2 Versioned REST API Endpoints (/api/v1)](#202-versioned-rest-api-endpoints-apiv1)
+    - [20.3 Database Architecture & Migrations](#203-database-architecture--migrations)
+    - [20.4 Centralized Risk Engine & Pre-Trade Safeguards](#204-centralized-risk-engine--pre-trade-safeguards)
+    - [20.5 Autonomous Background Worker](#205-autonomous-background-worker)
+    - [20.6 Next.js 16 Trading Dashboard](#206-nextjs-16-trading-dashboard)
+    - [20.7 AWS Cloud Deployment Infrastructure](#207-aws-cloud-deployment-infrastructure)
+    - [20.8 Final Test Suite Verification](#208-final-test-suite-verification)
 
 ---
+
 
 ## 1. Executive Summary
 
@@ -174,10 +203,14 @@ The project is fully implemented, verified, and operational in `E:\Field Project
 - The complete pipeline executes deterministically from ingestion through feature engineering, model training, and backtesting.
 - DVC pipeline execution (`dvc repro`) runs all 3 stages seamlessly and successfully invalidates/skips unchanged stages.
 - MLflow logs run parameters, model metrics, feature importances, and backtest results into an SQLite database with complete traceability to Git commits and DVC versions.
-- All 17 automated tests in the test suite pass with 100% compliance (`pytest -v`).
+- All 36 automated tests in the test suite pass with 100% compliance (`pytest -v`), spanning data validation, feature engineering, split purging, backtesting, REST API endpoints, and trading agent risk safeguards.
+- The production-grade FastAPI REST API (`/api/v1`) serves authenticated endpoints for market data, model predictions, strategy signals, portfolio accounting, order lifecycle management, and agent control.
+- An autonomous background strategy agent (`tradepilot.execution`) executes paper trading cycles with Alpaca API connectivity, an offline deterministic `MockBrokerAdapter`, and a centralized 10-rule risk engine with emergency stop capability.
+- A modern financial dashboard built in Next.js 16, TypeScript, and Tailwind CSS provides high-density market inspection, interactive candlestick/volume charts, SVG equity curves, and order execution.
 - Verified datasets span 50 equities from January 2021 through December 2025 (62,664 raw OHLCV rows; 61,764/59,964 clean, labeled feature rows).
 - Model evaluation demonstrates that the Random Forest classifier successfully captures non-linear structure across all classes, outperforming baseline models on balanced accuracy and Macro F1.
 - Backtesting validates that while the strategy generates positive cumulative returns in both 2024 (+10.39%) and 2025 (+6.78% to +9.94%), frequent rebalancing frictions and cash-drag limitations restrict its ability to outperform a concentrated mega-cap bull-market benchmark.
+- Cloud readiness is verified via Docker containers (`deploy/`), multi-service `docker-compose.yml`, Terraform IaC for Amazon ECS Fargate, RDS PostgreSQL 15, ALB, S3, Secrets Manager, and GitHub Actions CI (`.github/workflows/ci.yml`).
 
 ### 1.6 Intended Users and Real-World Use Cases
 - **Academic Evaluators and University Faculty:** Reviewing student engineering rigor, machine learning methodology, time-series leak prevention, and software architecture.
@@ -200,6 +233,11 @@ The project is fully implemented, verified, and operational in `E:\Field Project
 8. **Signal Transformation:** The system must convert out-of-sample class probability estimates dynamically into discrete trading signals (`1` for Buy, `-1` for Exit, `0` for Hold) based on a configurable probability threshold.
 9. **Event-Driven Backtest Simulation:** The system must simulate order execution at next-day Open ($t+1$), apply adverse slippage and commissions, manage portfolio cash balances, enforce a maximum position count, and record daily marked-to-market equity values and round-trip trade statistics.
 10. **Benchmark Reporting:** The system must compare the strategy's risk and return profile against an Equal-Weighted Buy-and-Hold benchmark over the identical investment universe and time period.
+11. **Versioned REST API Service:** The system must serve documented endpoints under `/api/v1` with OpenAPI schemas, JWT Bearer authentication, and Role-Based Access Control (RBAC).
+12. **Autonomous Paper Trading Execution:** The system must run a background execution agent cycling through inference, risk validation, paper order submission via Alpaca API or offline mock simulation, and position reconciliation.
+13. **Centralized Quantitative Risk Controls:** The system must enforce 10+ pre-trade quantitative checks, portfolio exposure caps, daily drawdown circuit breakers, and an administrative emergency kill switch.
+14. **Modern Trading Dashboard:** The system must provide an interactive Next.js 16 financial interface displaying real-time marked-to-market equity curves, candlestick price charts, probability distributions, order lifecycle management, and agent controls.
+15. **Relational State Persistence:** The system must persist users, agent cycles, orders, fills, snapshots, and risk events using SQLAlchemy 2.0 with Alembic version-controlled migrations.
 
 ### 2.2 Non-Functional Requirements
 1. **Determinism and Reproducibility:** All random seeds must be explicitly set (`random_seed = 42`). Identical inputs and random seeds must yield bitwise identical model parameters, evaluation metrics, and equity curves.
@@ -221,17 +259,20 @@ The project is fully implemented, verified, and operational in `E:\Field Project
 
 ### 2.5 In-Scope vs. Out-of-Scope Capabilities
 
-| Capability Domain | In-Scope (Implemented & Verified) | Out-of-Scope (Future / Planned) |
+| Capability Domain | In-Scope (Implemented & Verified in v1.0.0) | Out-of-Scope (Future / Planned) |
 | :--- | :--- | :--- |
-| **Market Data** | Historical daily OHLCV via Alpaca IEX API | Real-time WebSocket streaming, L2 order books |
+| **Market Data** | Historical daily OHLCV via Alpaca IEX API & 4-year CSV fallback | Real-time tick WebSocket streaming, L2 order books |
 | **Data Cleansing** | Missing value drops, duplicate checks, OHLC geometric bounds | Outlier winsorization, corporate action adjustment parsers |
 | **Features** | 8 stationary indicators (Returns, Volatility, RSI, MACD, Volume) | Fundamental ratios, order flow imbalance, sentiment analysis |
 | **Target Design** | Fixed $\pm 1\%$ 5-day forward return 3-class classification | Dynamic ATR-based targets, Triple Barrier Method, regression |
 | **Machine Learning** | DummyClassifier, Logistic Regression, Random Forest | XGBoost, LightGBM, CatBoost, LSTM, Temporal Fusion Transformers |
 | **Validation** | Chronological 3-way split with 5-day boundary purging | Purged Walk-Forward Cross-Validation, Combinatorial Purged CV |
 | **Trading Strategy** | Long-only event-driven execution with 5-day time exit | Long/short pairs, market-neutral hedging, stop-loss/take-profit |
-| **Execution Modeling** | Next-day Open execution, 5 bps slippage, 5 bps commissions | Limit order book simulation, partial fills, market impact models |
-| **Deployment & Ops** | DVC multi-stage pipeline, local DVC remote storage (`.dvc_storage`), MLflow SQLite tracking (`sqlite:///mlflow.db`), automated test suite | Remote cloud S3/GCS DVC storage, production Model Registry promotion, Docker, live Alpaca trading bot |
+| **Execution Modeling** | Next-day Open execution, 5 bps slippage, 5 bps commissions, Alpaca Paper API & Mock broker | Limit order book simulation, partial fills, market impact models |
+| **Application Layer** | FastAPI REST API (`/api/v1`), JWT authentication, RBAC, Pydantic v2 validation | Mobile native clients (iOS/Android) |
+| **Risk & Safeguards** | Centralized Risk Engine (10+ rules, drawdown breaker, emergency stop) | Dynamic VaR modeling, stress testing simulations |
+| **User Interface** | Next.js 16 trading dashboard, interactive SVG charts, order entry | Social trading feeds, third-party plugin store |
+| **Deployment & Ops** | DVC pipeline, MLflow tracking, SQLite/PostgreSQL, Docker, Terraform AWS IaC, CI/CD | Multi-region active-active cluster, automated live capital trading |
 
 ---
 
@@ -275,12 +316,16 @@ TradePilot is built on **Python 3.10** (verified on Python 3.10.7 on Windows x86
   - Uses an embedded SQLite backend (`sqlite:///mlflow.db`) with localized artifact storage (`./mlruns`), fully adhering to MLflow 3.x modern database-backed tracking requirements without requiring external services.
   - Logs model binaries (`best_model.joblib` and serialized scikit-learn pipelines), feature importance charts (`feature_importance.png`), confusion matrix tables, and complete backtesting simulation outputs.
 
-### 3.6 Clarification on Emerging and Future Stack Components
-To maintain technical integrity, the following stack components are explicitly documented as **planned future additions** and are **not** present in the current operational implementation:
-- **Cloud Remote Storage (AWS S3 / Google Cloud Storage / Azure Blob):** DVC remote is currently configured to local disk (`.dvc_storage`). Cloud buckets will be connected in future team environments.
-- **Model Registry Promotion Workflow:** While MLflow runs and artifacts are systematically logged, automated staging-to-production lifecycle transitions are planned for future deployment phases.
-- **Flask / FastAPI / Streamlit:** No web application server is present in the current release. Interaction is achieved via command-line entry points and the local MLflow UI dashboard.
-- **Docker / Kubernetes:** Containerization is planned for subsequent deployment phases.
+### 3.6 Application, Frontend, and Cloud Infrastructure Stack
+In the final application release (`v1.0.0`), TradePilot was integrated with a complete production web and cloud stack:
+- **FastAPI (`fastapi >= 0.115.0`) & Uvicorn (`uvicorn >= 0.30.0`):** Powers the asynchronous, versioned REST API (`/api/v1`) with OpenAPI documentation, dependency injection, and CORS security.
+- **Pydantic v2 (`pydantic >= 2.10.0`) & Pydantic-Settings:** Handles request/response schema validation, financial bounds checking, and environment variable configuration with strict typing.
+- **SQLAlchemy 2.0 (`sqlalchemy >= 2.0.30`) & Alembic (`alembic >= 1.13.0`):** Enterprise ORM mapping application entities (Users, Agent States, Cycles, Orders, Fills, Positions, Risk Events, Audit Logs) with version-controlled schema migrations. Defaults to embedded SQLite locally and seamlessly targets PostgreSQL 15 on Amazon RDS.
+- **Next.js 16 (`next >= 16.0.0`), TypeScript, & Tailwind CSS:** Client-side financial monitoring and trading terminal in `frontend/` featuring real-time equity curves, interactive candlestick charts, probability distributions, order lifecycle management, and emergency kill switches.
+- **Docker & Multi-Container Compose:** Production Dockerfiles (`deploy/Dockerfile.api`, `deploy/Dockerfile.worker`, `deploy/Dockerfile.frontend`) and local multi-service orchestration via `docker-compose.yml`.
+- **Terraform (AWS Provider ~> 5.0):** Complete Infrastructure-as-Code definitions (`deploy/terraform/`) for Amazon ECS on AWS Fargate, Application Load Balancer, Multi-AZ Amazon RDS PostgreSQL, Amazon S3, AWS Secrets Manager, and Amazon CloudWatch.
+- **GitHub Actions CI (`.github/workflows/ci.yml`):** Continuous integration workflow executing the 36-test pytest suite, dependency audits, and Next.js production builds on every push and pull request.
+
 
 ---
 
@@ -441,11 +486,72 @@ E:\Field Project\New Approach\
 │   ├── test_results.json                # Out-of-sample 2025 classification report and metrics
 │   ├── trade_ledger.csv                 # Granular record of all 318-343 executed trades in 2025 test
 │   └── validation_results.csv           # Validation comparison table across all candidate models
+├── .github/
+│   └── workflows/
+│       └── ci.yml                         # Automated GitHub Actions CI workflow (tests, lint, build)
+├── alembic/
+│   ├── env.py                             # Alembic migration environment connected to Base metadata
+│   ├── script.py.mako
+│   └── versions/
+│       └── 934fa89e0077_initial_schema.py # Initial database migration
+├── alembic.ini                            # Alembic database migration configuration
+├── deploy/
+│   ├── Dockerfile.api                     # Production container for FastAPI server
+│   ├── Dockerfile.worker                  # Production container for Strategy Background Worker
+│   ├── Dockerfile.frontend                # Multi-stage production container for Next.js 16
+│   ├── .env.example                       # Environment template with parameter documentation
+│   ├── docs/
+│   │   └── AWS_ARCHITECTURE.md           # AWS deployment guide, runbook, costs, & rollback
+│   └── terraform/
+│       ├── main.tf                        # ECS Fargate, ALB, RDS, S3, SecretsManager, CloudWatch
+│       ├── variables.tf                   # Terraform input variables
+│       └── outputs.tf                     # Terraform resource outputs
+├── docker-compose.yml                     # Local multi-container orchestration (Postgres, API, Worker, UI)
+├── frontend/                              # Next.js 16 TypeScript Trading Dashboard
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx                 # Root layout with TradePilot metadata
+│       │   ├── page.tsx                   # Main SPA dashboard managing views & auto-refresh
+│       │   └── globals.css                # Dark financial terminal styling
+│       ├── components/
+│       │   ├── Header.tsx                 # Status pills, agent controls, & kill switch modal
+│       │   ├── EquityChart.tsx            # Interactive SVG equity timeline chart
+│       │   ├── PriceChart.tsx             # Interactive candlestick & volume price chart
+│       │   └── views/
+│       │       ├── DashboardView.tsx      # KPI cards, equity curve, holdings, & signal glance
+│       │       ├── MarketsView.tsx        # Symbol selector, OHLCV bars table, & charts
+│       │       ├── PredictionsView.tsx    # Model metadata, on-demand inference, & probabilities
+│       │       ├── PortfolioView.tsx      # Asset allocation stacked bar & holdings ledger
+│       │       ├── OrdersView.tsx         # Manual paper order form & fills ledger
+│       │       ├── AgentControlView.tsx   # Agent lifecycle state machine & worker controls
+│       │       └── RiskView.tsx           # Limit utilization meters, risk events, & audit log
+│       └── lib/
+│           └── api.ts                     # Fully-typed API client for all backend schemas
 ├── src/
 │   └── tradepilot/
-│       ├── __init__.py                  # Package exports (__version__ = "0.2.0")
+│       ├── __init__.py                  # Package exports (__version__ = "1.0.0")
 │       ├── config.py                    # Dataclasses and params.yaml loader (get_data_config, etc.)
 │       ├── tracking.py                  # MLflow experiment tracking orchestrator (SQLite backend)
+│       ├── api/                         # FastAPI REST API subpackage (/api/v1)
+│       │   ├── app.py                   # FastAPI application entrypoint with CORS & routes
+│       │   ├── config.py                # Pydantic Settings & environment safeguards
+│       │   ├── security.py              # Bcrypt hashing & JWT bearer token generation
+│       │   ├── dependencies.py          # Database session & RBAC authentication dependencies
+│       │   ├── schemas/                 # Pydantic v2 schemas
+│       │   └── routers/                 # Versioned REST routers (system, auth, markets, etc.)
+│       ├── db/                          # SQLAlchemy database subpackage
+│       │   ├── base.py                  # DeclarativeBase and TimestampMixin
+│       │   ├── session.py               # SQLAlchemy engine, SessionLocal, init_db()
+│       │   └── models.py                # 12 Normalized relational ORM models
+│       ├── execution/                   # Strategy execution and brokerage adapters
+│       │   ├── broker_base.py           # Abstract BaseBrokerAdapter specification
+│       │   ├── alpaca_adapter.py        # Alpaca Paper API adapter (strict paper check)
+│       │   ├── mock_adapter.py          # In-memory paper broker simulation with slippage/fees
+│       │   ├── risk_engine.py           # CentralizedRiskEngine (10 quantitative rules)
+│       │   ├── agent.py                 # TradingAgent (state machine, sizing, reconciliation)
+│       │   └── worker.py                # BackgroundWorker process with graceful shutdown
 │       ├── backtesting/
 │       │   ├── __init__.py              # Backtesting subpackage exports
 │       │   ├── engine.py                # Chronological event-driven simulation loop
@@ -477,7 +583,9 @@ E:\Field Project\New Approach\
 │   ├── test_features.py                 # Tests for RSI, MACD, per-symbol isolation, and targets
 │   ├── test_pipeline_reproducibility.py # Tests for deterministic fitting and joblib serialization
 │   ├── test_signals.py                  # Tests for class order independence in signal mapping
-│   └── test_split_data.py               # Tests for chronological partitioning and boundary purging
+│   ├── test_split_data.py               # Tests for chronological partitioning and boundary purging
+│   ├── test_api_endpoints.py            # 11 Integration tests for FastAPI endpoints
+│   └── test_trading_agent_and_risk.py   # 8 Unit/integration tests for Risk Engine & Agent
 ├── download_market_data.py              # Script to download raw OHLCV data from Alpaca API
 ├── dvc.lock                             # DVC state lockfile recording hashes of dependencies & outputs
 ├── dvc.yaml                             # Multi-stage DVC pipeline definition (features, train, backtest)
@@ -487,8 +595,10 @@ E:\Field Project\New Approach\
 ├── pyproject.toml                       # Packaging configuration, build dependencies, and pytest options
 ├── requirements.txt                     # Explicit package dependency list (including DVC and MLflow)
 ├── stock_eda.py                         # Standalone exploratory data analysis and Colab prototype
+├── tradepilot.db                        # SQLite database for application state & audit logs
 └── train.py                             # Root wrapper delegating to train_pipeline
 ```
+
 
 ### 5.2 Module Mapping and Responsibility Matrix
 The following matrix illustrates the operational role of each primary component across the DVC and MLflow lifecycle:
@@ -922,6 +1032,22 @@ The following reference table documents all primary Python modules comprising th
 | `src/tradepilot/backtesting/engine.py` | Chronological event-driven simulation loop | `BacktestResult`, `BacktestEngine`, `run()` | OHLCV DF, Signal DF, date range | `BacktestResult` container | Pre-indexes price lookups; enforces next-day Open fills. |
 | `src/tradepilot/pipelines/train_pipeline.py` | Training workflow orchestration | `run_train_pipeline()`, `main()` | CLI invocation or direct call | Fitted model, metadata, reports | Comprehensive logging; logs execution errors and exits cleanly. |
 | `src/tradepilot/pipelines/backtest_pipeline.py` | Backtest workflow orchestration | `run_backtest_pipeline()`, `main()` | CLI invocation or direct call | Equity curves, trade ledgers, summaries | Validates model artifact existence before executing simulations. |
+| `src/tradepilot/api/app.py` | FastAPI application factory & router registration | `app`, lifespan handler | HTTP requests on `/api/v1` | JSON responses, CORS middleware | Auto-initializes database & seeds default admin user on startup. |
+| `src/tradepilot/api/config.py` | API & execution environment settings | `Settings`, `get_settings()` | Environment variables / `.env` | Validated Pydantic configuration | Enforces strict paper mode; refuses to boot in live mode. |
+| `src/tradepilot/api/security.py` | Authentication & token cryptography | `hash_password()`, `verify_password()`, `create_access_token()`, `decode_access_token()` | Plaintext passwords, JWT tokens | Bcrypt password hashes, encoded/decoded JWT claims | Enforces HS256 JWT signatures and token expiration. |
+| `src/tradepilot/api/dependencies.py` | Request dependency injection & RBAC | `get_db()`, `get_current_user()`, `require_role()` | FastAPI `Depends`, Bearer token | Active DB session, authenticated `User` | Raises `401 Unauthorized` on invalid token; `403 Forbidden` on role breach. |
+| `src/tradepilot/api/routers/*.py` | Versioned REST API endpoints | `system_router`, `auth_router`, `markets_router`, `predictions_router`, `portfolio_router`, `orders_router`, `agent_router`, `risk_router` | HTTP GET/POST payloads | Pydantic response models | Standardized HTTP status codes (200, 201, 400, 401, 403, 404, 500). |
+| `src/tradepilot/db/models.py` | Relational database schema models | `User`, `AgentStateModel`, `TradingCycleModel`, `PredictionRecord`, `SignalRecord`, `OrderIntentRecord`, `BrokerOrderRecord`, `OrderFillRecord`, `PositionSnapshotRecord`, `PortfolioSnapshotRecord`, `RiskEventRecord`, `AuditLogRecord` | SQLAlchemy ORM operations | Relational tables in SQLite/PostgreSQL | Enforces foreign keys, indexes, timestamps, and check constraints. |
+| `src/tradepilot/db/session.py` | Database engine & session management | `engine`, `SessionLocal`, `init_db()` | Database URI | Managed SQLAlchemy sessions | Configures connection pools; seeds initial admin credentials. |
+| `src/tradepilot/execution/broker_base.py` | Brokerage integration abstract contract | `BaseBrokerAdapter`, `BrokerAccount`, `BrokerPosition`, `BrokerOrder` | Abstract method definitions | Standardized brokerage domain models | Enforces uniform API across mock and live paper brokers. |
+| `src/tradepilot/execution/mock_adapter.py` | Deterministic offline paper broker | `MockBrokerAdapter` | Local OHLCV data cache | Simulated fills with 5 bps slippage & fees | Maintains internal cash balance and portfolio equity offline. |
+| `src/tradepilot/execution/alpaca_adapter.py` | Official Alpaca paper API adapter | `AlpacaPaperBroker` | Alpaca paper credentials, `alpaca-py` | Dispatched orders, account balances | Strictly verifies account `is_paper()`; rejects live trading. |
+| `src/tradepilot/execution/risk_engine.py` | Centralized quantitative pre-trade risk engine | `CentralizedRiskEngine`, `evaluate_order()` | Proposed `OrderIntent`, portfolio state | `RiskDecision(approved, reason)` | Enforces 10+ risk rules, drawdown limits, and emergency kill switch. |
+| `src/tradepilot/execution/agent.py` | Autonomous strategy trading agent | `TradingAgent`, `run_cycle()` | Model artifact, market bars, broker | Dispatched orders, reconciled state | Coordinates inference, signal filtering, risk gating, and fills. |
+| `src/tradepilot/execution/worker.py` | Autonomous background strategy worker | `BackgroundWorker`, `start()`, `stop()` | Configured cadence (default: 60s) | Scheduled trading cycle execution | Implements heartbeat tracking and graceful POSIX signal shutdown. |
+| `frontend/src/lib/api.ts` | Fully typed frontend REST API client | `apiClient` methods | Browser fetch with JWT Bearer token | Strongly typed TypeScript responses | Auto-handles error statuses and redirects on authentication expiry. |
+| `frontend/src/app/page.tsx` | Main trading dashboard SPA controller | `TradePilotDashboard` component | API fetch state | 7 financial views with auto-refresh | Live polling every 5s; manages emergency stop confirmation modal. |
+| `deploy/terraform/main.tf` | AWS cloud infrastructure IaC | ECS Fargate, ALB, RDS, S3, Secrets Manager, CloudWatch | Terraform variables | Provisioned AWS production resources | Multi-AZ PostgreSQL, serverless containers, zero-trust secrets. |
 | `download_market_data.py` | Historical data retrieval via Alpaca API | Script execution | Alpaca API keys in `.env` | `data/raw/stock_ohlcv_2021_2025.csv` | Raises `ValueError` if API credentials are missing. |
 | `stock_eda.py` | Prototype exploratory analysis script | Script execution | Google Drive / local CSVs | Cleaned CSV, feature CSV, reports | Standalone exploratory research script. |
 | `train.py` | Root CLI training entrypoint | Script execution | None (CLI parameters) | Calls `train_pipeline.main()` | Thin wrapper delegating execution to the package pipeline. |
@@ -1276,6 +1402,133 @@ stages:
 
 ---
 
+### 11.10 REST API and Authentication Service: `tradepilot.api`
+The application layer exposes a high-performance, asynchronous REST API under the `/api/v1` namespace, built using FastAPI, Pydantic v2, and Uvicorn:
+
+- **Application Factory (`app.py`):** Configures CORS middleware for `http://localhost:3000`, mounts OpenAPI documentation at `/docs` and `/redoc`, and defines an asynchronous lifespan handler that initializes database tables and seeds the default administrator (`admin@tradepilot.io`) upon startup.
+- **Environment & Safeguards Configuration (`config.py`):** Utilizes `pydantic-settings` to parse configuration from environment variables and `.env`. Programmatically enforces strict paper trading safeguards: refuses application boot if `TRADING_MODE` is set to `LIVE`.
+- **Security & Cryptography (`security.py`):** Manages password hashing using `bcrypt` (12 rounds) and encodes/decodes JSON Web Tokens (JWT) using `pyjwt` with `HS256` signatures and a 24-hour expiration window.
+- **Request Dependencies & RBAC (`dependencies.py`):** Implements dependency injection for database sessions (`get_db`) and role-based access control (`get_current_user`, `require_role`). Enforces three access tiers:
+  - `viewer`: Read-only access to market data, active models, portfolio snapshots, and public status.
+  - `trader`: Permissions to trigger on-demand inference cycles, submit manual paper orders, and toggle agent execution (Start/Pause/Stop).
+  - `admin`: Full administrative access, including role management, audit log inspection, and the emergency kill switch.
+- **Data Transfer Schemas (`schemas/`):** Strongly typed Pydantic models with financial bounds validation:
+  - `auth.py`: `LoginRequest`, `TokenResponse`, `UserResponse`.
+  - `system.py`: `HealthResponse`, `SystemStatusResponse`.
+  - `market.py`: `SymbolListResponse`, `BarRecord`, `MarketStatusResponse`.
+  - `prediction.py`: `PredictionResponse`, `SignalResponse`, `ModelMetadataResponse`.
+  - `portfolio.py`: `PortfolioSummaryResponse`, `PositionResponse`, `EquityPointResponse`.
+  - `order.py`: `OrderCreateRequest`, `OrderResponse`, `TradeFillResponse`.
+  - `agent.py`: `AgentStatusResponse`, `AgentCommandRequest`, `TradingCycleResponse`.
+  - `risk.py`: `RiskStatusResponse`, `RiskConfigResponse`, `RiskEventResponse`, `AuditLogResponse`.
+- **Versioned API Routers (`routers/`):**
+  - `system.py`: Liveness (`GET /health`), readiness (`GET /ready`), and detailed operational status (`GET /api/v1/system/status`).
+  - `auth.py`: JSON credential authentication (`POST /api/v1/auth/login-json`) and identity verification (`GET /api/v1/auth/me`).
+  - `markets.py`: Universe listing (`GET /api/v1/markets/symbols`), OHLCV candles (`GET /api/v1/markets/bars`), and latest quotes (`GET /api/v1/markets/latest`).
+  - `predictions.py`: Latest class probabilities (`GET /api/v1/predictions/latest`), manual inference execution (`POST /api/v1/predictions/run`), strategy signals (`GET /api/v1/signals`), and active model architecture (`GET /api/v1/models/active`).
+  - `portfolio.py`: Account equity and cash (`GET /api/v1/portfolio`), active holdings (`GET /api/v1/portfolio/positions`), and historical equity timeline (`GET /api/v1/portfolio/equity`).
+  - `orders.py`: Paper order submission (`POST /api/v1/orders`), lifecycle order queries (`GET /api/v1/orders`), and trade fill ledgers (`GET /api/v1/trades`).
+  - `agent.py`: Agent state inspection (`GET /api/v1/agent/status`) and control commands (`/start`, `/pause`, `/stop`, `/emergency-stop`).
+  - `risk.py`: Real-time risk limit utilization (`GET /api/v1/risk/status`), active parameters (`GET /api/v1/risk/config`), risk breach events (`GET /api/v1/risk/events`), and administrative audit trail (`GET /api/v1/risk/audit/logs`).
+
+---
+
+### 11.11 Relational Persistence & Schema Migrations: `tradepilot.db`
+TradePilot implements a relational persistence layer using SQLAlchemy 2.0 with Alembic schema migrations:
+
+- **Declarative Base & Mixins (`base.py`):** Defines `Base(DeclarativeBase)` and `TimestampMixin` providing automatic UTC `created_at` and `updated_at` timestamps across all entities.
+- **Connection Management & Lifespan (`session.py`):** Configures connection pooling for SQLite and PostgreSQL. Exports `SessionLocal` and an idempotent `init_db()` routine that creates tables and seeds the administrative user.
+- **Relational Domain Models (`models.py`):** 12 normalized database entities:
+  - `User`: Identity credentials, hashed passwords, roles (`admin`, `trader`, `viewer`), and active flags.
+  - `AgentStateModel`: Singleton record tracking agent status (`STOPPED`, `RUNNING`, `PAUSED`, `ERROR`), verified `PAPER` mode, heartbeat timestamps, and error logs.
+  - `TradingCycleModel`: Execution log capturing cycle duration, symbols evaluated, signals emitted, and orders submitted.
+  - `PredictionRecord`: Multi-class probability distributions (`prob_up`, `prob_neutral`, `prob_down`) per symbol and cycle.
+  - `SignalRecord`: Strategy actions (`BUY`, `EXIT`, `HOLD`) with rule rationale and conviction scores.
+  - `OrderIntentRecord`: Proposed trades evaluated by the Risk Engine with approval status and rejection reasons.
+  - `BrokerOrderRecord`: Dispatched paper orders tracking lifecycle states (`SUBMITTED`, `FILLED`, `CANCELED`, `REJECTED`).
+  - `OrderFillRecord`: Broker execution receipts with fill prices, executed quantities, and transaction commissions.
+  - `PositionSnapshotRecord`: Reconciled holdings with average cost basis, current market prices, and unrealized P&L.
+  - `PortfolioSnapshotRecord`: Marked-to-market equity curve data points (equity, cash, buying power, gross exposure).
+  - `RiskEventRecord`: Immutable log of blocked orders and tripped risk thresholds.
+  - `AuditLogRecord`: Append-only security audit trail recording operator identity, IP address, and administrative actions.
+- **Alembic Database Migrations (`alembic/`):** Initial migration `934fa89e0077_initial_schema.py` defines the complete relational schema with foreign key constraints, indexes, and cascades.
+
+---
+
+### 11.12 Execution Engine, Broker Adapters & Centralized Risk Engine: `tradepilot.execution`
+The execution layer bridges statistical signals with paper brokerage accounts:
+
+- **Broker Adapter Specification (`broker_base.py`):** Abstract base class (`BaseBrokerAdapter`) establishing standardized brokerage contracts: `get_account()`, `get_positions()`, `get_latest_bars()`, `submit_order()`, `cancel_order()`, and `get_orders()`.
+- **Deterministic Mock Broker (`mock_adapter.py`):** High-fidelity paper trading simulation for offline development:
+  - Initializes with a configurable cash balance (default: $100,000.00).
+  - Simulates 5 bps adverse slippage on fills and deducts 5 bps transaction fees.
+  - Leverages cached 4-year daily OHLCV bars (`data/raw/stock_ohlcv_2021_2025.csv`) for offline market pricing.
+  - Implements complete order lifecycle state transitions (`SUBMITTED` $\to$ `FILLED`).
+- **Alpaca Paper Adapter (`alpaca_adapter.py`):** Official integration with Alpaca Markets using `alpaca-py`:
+  - Enforces `is_paper()` check on `TradingClient` to guarantee that live capital is never exposed.
+  - Queries daily market bars using `StockHistoricalDataClient` configured with `feed=DataFeed.IEX`.
+  - Features automatic fallback to local historical bar data if external market feeds are restricted or offline.
+- **Centralized Risk Management Engine (`risk_engine.py`):** Pre-trade risk enforcement module evaluating every order proposal before brokerage submission:
+  - *Paper Verification:* Blocks orders if trading mode is not verified as `PAPER`.
+  - *Emergency Kill Switch:* Blocks all trading if emergency stop is triggered.
+  - *Approved Universe:* Rejects symbols outside the 50-ticker large-cap universe.
+  - *Order Parameter Bounds:* Enforces positive integer share quantities and valid market/limit order types.
+  - *Deduplication:* Prevents duplicate client order IDs and blocks concurrent pending orders for the same symbol.
+  - *Position Exposure Cap:* Restricts any single stock to a maximum of **10.0%** of total portfolio equity.
+  - *Max Concurrent Holdings:* Caps active holdings to a maximum of **10 distinct equities**.
+  - *Gross Portfolio Exposure:* Caps total invested capital at **95.0%** of portfolio equity.
+  - *Cash Solvency:* Rejects buy orders exceeding available cash reserves and buying power.
+  - *Daily Drawdown Circuit Breaker:* Automatically trips the emergency kill switch if intraday portfolio losses exceed **5.0%**.
+- **Autonomous Strategy Agent (`agent.py`):** Coordinates the execution cycle:
+  - Loads the serialized Random Forest pipeline (`models/best_model.joblib`).
+  - Computes 8 stationary technical features on latest market bars.
+  - Generates class probabilities and applies `SignalGenerator` thresholds.
+  - Calculates target share allocations based on available capital and portfolio limits.
+  - Submits proposed order intents to `CentralizedRiskEngine`.
+  - Dispatches approved orders to the active broker adapter.
+  - Reconciles broker positions and records portfolio snapshots to the database.
+- **Autonomous Background Worker (`worker.py`):** Standalone process executing the strategy agent on a scheduled cadence (default: 60 seconds). Features heartbeat logging to detect worker stalls and graceful shutdown handling upon `SIGINT` / `SIGTERM`.
+
+---
+
+### 11.13 Modern Trading Dashboard: `frontend/`
+The presentation layer is a high-density, dark-themed financial trading terminal built with Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, and Lucide icons:
+
+- **Fully-Typed API Client (`src/lib/api.ts`):** Wraps all backend endpoints with TypeScript interfaces matching Pydantic response models, managing JWT Bearer tokens and error propagation.
+- **Interactive SVG Visualizations:**
+  - `EquityChart.tsx`: Renders marked-to-market portfolio equity with smooth cubic Bezier curves, dynamic linear gradients, and interactive hover tooltips tracking equity and cash values.
+  - `PriceChart.tsx`: High-performance SVG candlestick and volume bar chart displaying historical OHLCV data with bullish/bearish color coding and volume distributions.
+- **Header & Global Status (`Header.tsx`):** Displays operational status pills (Backend Live/Down, Trading Agent State, Mode Badge), manual inference trigger, agent controls, and an Emergency Kill Switch with a two-step confirmation modal.
+- **Seven Dedicated Financial Views (`src/components/views/`):**
+  1. `DashboardView.tsx`: Portfolio KPIs (Equity, Buying Power, Daily P&L, Gross Exposure gauge), marked-to-market equity timeline, active positions overview, and recent trading signals.
+  2. `MarketsView.tsx`: Multi-symbol selector across the 50-stock universe, latest quote cards with 24h percentage changes, interactive candlestick/volume charts, and historical OHLCV data table.
+  3. `PredictionsView.tsx`: Active model architecture card, test fold metrics, on-demand prediction runner, and visual 3-class probability distribution bars (`UP`, `NEUTRAL`, `DOWN`) with conviction thresholds.
+  4. `PortfolioView.tsx`: Asset allocation stacked visualizer, cash allocation meter, and position details table displaying shares, cost basis, current value, and unrealized P&L ($ and %).
+  5. `OrdersView.tsx`: Manual paper order submission form with real-time pre-trade risk feedback, order lifecycle table with status badges (`FILLED`, `SUBMITTED`, `REJECTED`), and execution fills ledger.
+  6. `AgentControlView.tsx`: Agent state machine controls (Start, Pause, Stop, Emergency Kill Switch), worker heartbeat monitor, cycle cadence settings, and chronological execution cycle history.
+  7. `RiskView.tsx`: Real-time quantitative limit utilization meters (Gross Exposure, Position Count, Daily Drawdown), configured boundaries, immutable risk events log, and administrative security audit trail.
+
+---
+
+### 11.14 Cloud Deployment, Docker & Terraform IaC: `deploy/` and `.github/`
+TradePilot provides production containerization and cloud infrastructure definitions ready for AWS deployment:
+
+- **Containerization (`deploy/`):**
+  - `Dockerfile.api`: Python 3.10 slim container executing the FastAPI server via Uvicorn.
+  - `Dockerfile.worker`: Python 3.10 slim container executing the background trading agent worker.
+  - `Dockerfile.frontend`: Multi-stage Node.js 20 Alpine container building the standalone Next.js 16 production server.
+  - `docker-compose.yml`: Multi-container orchestration linking PostgreSQL 15, FastAPI Backend, Strategy Worker, and Next.js Frontend with internal networking and persistent health checks.
+- **AWS Infrastructure-as-Code (`deploy/terraform/`):**
+  - `main.tf`: Provisions Amazon ECS on AWS Fargate (serverless tasks for API and Worker), Application Load Balancer (ALB) terminating TLS, Amazon RDS for PostgreSQL 15 Multi-AZ database, Amazon S3 bucket for model artifacts, AWS Secrets Manager for credentials, and Amazon CloudWatch for centralized logging and alarms.
+  - `variables.tf` & `outputs.tf`: Parameterized AWS region, VPC CIDRs, container image tags, and database compute sizing.
+- **Continuous Integration Pipeline (`.github/workflows/ci.yml`):**
+  - Executes on push and pull requests to `main`.
+  - Runs flake8 linting and type checks.
+  - Executes the full 36-test `pytest -v` automated test suite.
+  - Builds the Next.js 16 production bundle to guarantee zero TypeScript compilation or lint errors.
+
+---
+
 ## 12. Installation, Environment Setup, and Execution Guide
 
 ### 12.1 Environment Prerequisites
@@ -1391,22 +1644,102 @@ Upon pipeline completion, the following artifacts are generated:
 - `reports/trade_ledger.csv`: Granular trade-by-trade log detailing entry/exit dates, fill prices, shares, gross PnL, net PnL, and transaction fees.
 - `reports/benchmark_comparison.csv`: High-level strategy vs. benchmark comparative summary.
 
-### 12.8 Troubleshooting Common Operational Faults
+### 12.8 Database Schema Setup & Alembic Migrations
+TradePilot uses SQLAlchemy 2.0 and Alembic to manage its relational schema (users, agent cycles, orders, fills, snapshots, risk events, and audit logs). The default local database is SQLite (`tradepilot.db`), but PostgreSQL is supported by updating `DATABASE_URL` in `.env`.
+
+To apply all database migrations:
+```powershell
+# Run database migrations to latest schema version
+alembic upgrade head
+```
+*Note on Automatic Seeding:* When the FastAPI backend boots for the first time, its lifespan handler calls `init_db()`, which automatically creates any missing tables and seeds the default administrator account:
+- **Default Admin Email:** `admin@tradepilot.io`
+- **Default Admin Password:** `AdminPass123!`
+
+---
+
+### 12.9 Launching the Full Production Stack (API, Worker, Frontend)
+Running TradePilot in development mode requires three lightweight processes:
+
+#### Terminal 1: FastAPI REST API Server
+```powershell
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Start FastAPI server on port 8000
+uvicorn src.tradepilot.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+- **API Base URL:** `http://localhost:8000`
+- **Interactive OpenAPI Documentation (Swagger UI):** `http://localhost:8000/docs`
+- **ReDoc Documentation:** `http://localhost:8000/redoc`
+
+#### Terminal 2: Autonomous Strategy Background Worker
+```powershell
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Launch the background strategy trading worker
+python -m tradepilot.execution.worker
+```
+- The worker boots, logs its process PID, updates its heartbeat in the database, and executes trading cycles at the configured cadence (default: 60s).
+- Graceful shutdown can be triggered at any time using `Ctrl+C` (`SIGINT`).
+
+#### Terminal 3: Next.js 16 Financial Trading Terminal
+```powershell
+# Navigate to the frontend directory
+Set-Location -Path "frontend"
+
+# Install Node dependencies (first run only)
+npm install
+
+# Start Next.js development server
+npm run dev
+```
+- **Dashboard URL:** `http://localhost:3000`
+- The terminal automatically connects to `http://localhost:8000/api/v1`, authenticates using the default admin credentials, and polls state every 5 seconds.
+
+---
+
+### 12.10 Multi-Container Deployment via Docker Compose
+For containerized local orchestration or cloud staging, TradePilot provides `docker-compose.yml`, which coordinates:
+1. `postgres`: PostgreSQL 15 database with persistent volume `pgdata`.
+2. `api`: FastAPI application container on port 8000.
+3. `worker`: Autonomous strategy loop process.
+4. `frontend`: Next.js 16 production server on port 3000.
+
+```powershell
+# Build and run the entire multi-service stack
+docker compose up --build
+```
+*Docker Prerequisite Note:* Docker Desktop must be running on your system with the Linux container engine active. If Docker Desktop is stopped, the command will report `//./pipe/dockerDesktopLinuxEngine: The system cannot find the file`. In that case, launch Docker Desktop first or run natively using the three PowerShell terminals described in Section 12.9.
+
+---
+
+### 12.11 Troubleshooting Common Operational Faults
 1. **`ModuleNotFoundError: No module named 'tradepilot'`:**
-   - *Cause:* The package was not installed in editable mode or `src` is missing from `sys.path`.
+   - *Cause:* The package was not installed in editable development mode or `src` is missing from `sys.path`.
    - *Resolution:* Run `pip install -e .` from the project root.
-2. **`dvc repro` executes using wrong Python interpreter:**
+2. **`ModuleNotFoundError: No module named 'jwt'` during `pytest -v`:**
+   - *Cause:* Running `pytest` from system Python rather than the virtual environment where `pyjwt` is installed.
+   - *Resolution:* Always execute using the virtual environment's interpreter: `.\.venv\Scripts\pytest -v`.
+3. **`dvc repro` executes using wrong Python interpreter:**
    - *Cause:* PowerShell executed DVC in a session without the virtual environment active, falling back to system Python.
    - *Resolution:* Run `.\.venv\Scripts\Activate.ps1` before invoking `dvc repro`.
-3. **`mlflow.exceptions.MlflowException: Could not find experiment`:**
+4. **`mlflow.exceptions.MlflowException: Could not find experiment`:**
    - *Cause:* MLflow UI launched without specifying the database URI (`--backend-store-uri sqlite:///mlflow.db`).
    - *Resolution:* Always launch MLflow UI with `mlflow ui --backend-store-uri sqlite:///mlflow.db`.
-4. **`FileNotFoundError: Raw OHLCV data file not found`:**
+5. **`FileNotFoundError: Raw OHLCV data file not found`:**
    - *Cause:* `stock_ohlcv_2021_2025.csv` is missing from `data/raw/`.
    - *Resolution:* Run `dvc pull` to retrieve from local cache, or run `python download_market_data.py`.
-5. **`ValueError: Missing Alpaca API credentials in .env`:**
+6. **`ValueError: Missing Alpaca API credentials in .env`:**
    - *Cause:* Missing or empty `ALPACA_API_KEY` or `ALPACA_SECRET_KEY` in `.env`.
    - *Resolution:* Add valid Alpaca paper-trading credentials to `.env`.
+7. **`HTTP 403 Forbidden: subscription does not permit querying recent SIP data`:**
+   - *Cause:* Alpaca free paper accounts cannot access direct consolidated SIP feeds.
+   - *Resolution:* TradePilot automatically configures `feed=DataFeed.IEX` on all market bar requests and falls back seamlessly to the cached 4-year CSV dataset if network connectivity or subscriptions fail.
+8. **Docker daemon connection error (`The system cannot find the file`):**
+   - *Cause:* `docker compose up` was executed while Docker Desktop was not running.
+   - *Resolution:* Start the Docker Desktop application from the Windows Start menu, wait for the engine to initialize (green icon in the system tray), and re-run `docker compose up --build`. Alternatively, run natively via PowerShell (Section 12.9).
 
 ---
 
@@ -1420,8 +1753,8 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 ```
 
-### 13.2 Breakdown of Automated Unit and Integration Tests
-The test suite contains **17 automated test cases** distributed across 6 specialized modules:
+### 13.2 Breakdown of 36 Automated Unit and Integration Tests
+The test suite contains **36 automated test cases** distributed across 8 specialized modules:
 
 1. **`tests/test_data_validation.py` (6 tests):**
    - `test_validate_ohlcv_schema_passes_valid`: Asserts that valid OHLCV datasets pass schema checks without error.
@@ -1452,36 +1785,81 @@ The test suite contains **17 automated test cases** distributed across 6 special
    - `test_model_training_reproducibility`: Fits two independent Random Forest models using identical data and `random_seed=42`, verifying that output predictions are identical.
    - `test_model_serialization_integrity`: Fits a pipeline, saves it to a temporary directory with `joblib.dump`, reloads it, and verifies identical predictions and class probabilities (`np.allclose`).
 
-### 13.3 Test Verification Log and Passing Assertions
-Executing `pytest -v` across the suite produces the following verified passing output:
+7. **`tests/test_api_endpoints.py` (11 tests):**
+   - `test_health_endpoint`: Asserts that `GET /health` returns status `healthy` and version `1.0.0`.
+   - `test_ready_endpoint`: Asserts that `GET /ready` verifies database connectivity, model artifact presence, and paper trading isolation.
+   - `test_system_status_endpoint`: Asserts that `GET /api/v1/system/status` returns operational state, system uptime, and database connectivity.
+   - `test_auth_login_and_me`: Validates JWT token generation on `POST /api/v1/auth/login-json` and verifies user profile on `GET /api/v1/auth/me`.
+   - `test_auth_login_invalid_credentials`: Asserts that invalid credentials return `401 Unauthorized`.
+   - `test_markets_symbols_and_bars`: Validates universe listing on `GET /api/v1/markets/symbols` and candle data on `GET /api/v1/markets/bars`.
+   - `test_markets_latest_and_status`: Asserts that `GET /api/v1/markets/latest` returns current market quotes and `GET /api/v1/markets/status` reports data freshness.
+   - `test_active_model_and_predictions`: Validates `GET /api/v1/models/active` returns model architecture & test metrics, and `GET /api/v1/predictions/latest` yields valid class probabilities.
+   - `test_portfolio_summary_and_positions`: Asserts that `GET /api/v1/portfolio` and `GET /api/v1/portfolio/positions` return account equity, cash balance, and open holdings.
+   - `test_agent_status_and_lifecycle`: Tests agent state inspection (`/api/v1/agent/status`) and state machine transitions (`/start`, `/pause`, `/stop`).
+   - `test_risk_status_and_config`: Verifies `GET /api/v1/risk/status` and `GET /api/v1/risk/config` report active thresholds and circuit breaker status.
+
+8. **`tests/test_trading_agent_and_risk.py` (8 tests):**
+   - `test_risk_engine_approves_valid_order`: Asserts that an order adhering to all position size, cash, and exposure limits receives `approved=True`.
+   - `test_risk_engine_enforces_max_position_size`: Asserts that orders requesting greater than 10% portfolio allocation are rejected (`approved=False`).
+   - `test_risk_engine_enforces_max_concurrent_positions`: Asserts that orders opening an 11th distinct position when 10 positions are already active are rejected.
+   - `test_risk_engine_prevents_duplicate_orders`: Validates deduplication against existing pending client order IDs and concurrent pending orders for the same ticker.
+   - `test_risk_engine_emergency_stop_blocks_all_orders`: Asserts that triggering the emergency kill switch blocks all subsequent order intents immediately.
+   - `test_risk_engine_rejects_non_paper_mode`: Asserts that any attempt to submit an order in a non-`PAPER` mode is rejected immediately by the risk engine.
+   - `test_mock_broker_order_execution_and_fees`: Verifies that `MockBrokerAdapter` executes buy orders with +5 bps slippage, sell orders with -5 bps slippage, deducts commissions, and updates account equity.
+   - `test_trading_agent_lifecycle_and_reconciliation`: Verifies end-to-end trading agent cycle: running predictions, gating through risk engine, submitting paper orders, and reconciling broker positions.
+
+### 13.3 Test Verification Log and Passing Assertions (36 Passed)
+Executing `pytest -v` across the entire 8-module suite produces the following verified passing output:
 
 ```text
 ============================= test session starts =============================
-platform win32 -- Python 3.10.7, pytest-9.1.1, pluggy-1.6.0
+platform win32 -- Python 3.10.7, pytest-9.2.0, pluggy-1.7.0 -- E:\Field Project\New Approach\.venv\Scripts\python.exe
+cachedir: .pytest_cache
 rootdir: E:\Field Project\New Approach
 configfile: pyproject.toml
 testpaths: tests
-collected 17 items
+plugins: anyio-4.15.1, hydra-core-1.3.8, platformdirs-4.12.4, asyncio-1.4.1
+asyncio: mode=strict, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 36 items
 
-tests/test_data_validation.py::test_validate_ohlcv_schema_passes_valid PASSED      [  5%]
-tests/test_data_validation.py::test_validate_ohlcv_detects_duplicates PASSED        [ 11%]
-tests/test_data_validation.py::test_validate_ohlcv_detects_negative_price PASSED    [ 17%]
-tests/test_data_validation.py::test_validate_ohlcv_detects_high_low_violation PASSED [ 23%]
-tests/test_data_validation.py::test_validate_features_dataset_detects_target_leakage PASSED [ 29%]
-tests/test_data_validation.py::test_validate_features_dataset_detects_nan_values PASSED [ 35%]
-tests/test_execution_and_portfolio.py::test_execution_slippage_and_fees PASSED     [ 41%]
-tests/test_execution_and_portfolio.py::test_portfolio_cash_accounting_and_round_trip PASSED [ 47%]
-tests/test_execution_and_portfolio.py::test_portfolio_prevents_negative_cash PASSED [ 52%]
-tests/test_features.py::test_rsi_bounds PASSED                                       [ 58%]
-tests/test_features.py::test_macd_calculation PASSED                                 [ 64%]
-tests/test_features.py::test_features_independent_per_symbol PASSED                  [ 70%]
-tests/test_features.py::test_target_classification_logic PASSED                      [ 76%]
-tests/test_pipeline_reproducibility.py::test_model_training_reproducibility PASSED   [ 82%]
-tests/test_pipeline_reproducibility.py::test_model_serialization_integrity PASSED     [ 88%]
-tests/test_signals.py::test_signals_class_order_independence PASSED                  [ 94%]
-tests/test_split_data.py::test_chronological_split_and_purge PASSED                  [100%]
+tests/test_api_endpoints.py::test_health_endpoint PASSED                 [  2%]
+tests/test_api_endpoints.py::test_ready_endpoint PASSED                  [  5%]
+tests/test_api_endpoints.py::test_system_status_endpoint PASSED          [  8%]
+tests/test_api_endpoints.py::test_auth_login_and_me PASSED               [ 11%]
+tests/test_api_endpoints.py::test_auth_login_invalid_credentials PASSED  [ 13%]
+tests/test_api_endpoints.py::test_markets_symbols_and_bars PASSED        [ 16%]
+tests/test_api_endpoints.py::test_markets_latest_and_status PASSED       [ 19%]
+tests/test_api_endpoints.py::test_active_model_and_predictions PASSED    [ 22%]
+tests/test_api_endpoints.py::test_portfolio_summary_and_positions PASSED [ 25%]
+tests/test_api_endpoints.py::test_agent_status_and_lifecycle PASSED      [ 27%]
+tests/test_api_endpoints.py::test_risk_status_and_config PASSED          [ 30%]
+tests/test_data_validation.py::test_validate_ohlcv_schema_passes_valid PASSED [ 33%]
+tests/test_data_validation.py::test_validate_ohlcv_detects_duplicates PASSED [ 36%]
+tests/test_data_validation.py::test_validate_ohlcv_detects_negative_price PASSED [ 38%]
+tests/test_data_validation.py::test_validate_ohlcv_detects_high_low_violation PASSED [ 41%]
+tests/test_data_validation.py::test_validate_features_dataset_detects_target_leakage PASSED [ 44%]
+tests/test_data_validation.py::test_validate_features_dataset_detects_nan_values PASSED [ 47%]
+tests/test_execution_and_portfolio.py::test_execution_slippage_and_fees PASSED [ 50%]
+tests/test_execution_and_portfolio.py::test_portfolio_cash_accounting_and_round_trip PASSED [ 52%]
+tests/test_execution_and_portfolio.py::test_portfolio_prevents_negative_cash PASSED [ 55%]
+tests/test_features.py::test_rsi_bounds PASSED                           [ 58%]
+tests/test_features.py::test_macd_calculation PASSED                     [ 61%]
+tests/test_features.py::test_features_independent_per_symbol PASSED      [ 63%]
+tests/test_features.py::test_target_classification_logic PASSED          [ 66%]
+tests/test_pipeline_reproducibility.py::test_model_training_reproducibility PASSED [ 69%]
+tests/test_pipeline_reproducibility.py::test_model_serialization_integrity PASSED [ 72%]
+tests/test_signals.py::test_signals_class_order_independence PASSED      [ 75%]
+tests/test_split_data.py::test_chronological_split_and_purge PASSED      [ 77%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_approves_valid_order PASSED [ 80%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_enforces_max_position_size PASSED [ 83%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_enforces_max_concurrent_positions PASSED [ 86%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_prevents_duplicate_orders PASSED [ 88%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_emergency_stop_blocks_all_orders PASSED [ 91%]
+tests/test_trading_agent_and_risk.py::test_risk_engine_rejects_non_paper_mode PASSED [ 94%]
+tests/test_trading_agent_and_risk.py::test_mock_broker_order_execution_and_fees PASSED [ 97%]
+tests/test_trading_agent_and_risk.py::test_trading_agent_lifecycle_and_reconciliation PASSED [100%]
 
-============================= 17 passed in 9.22s ==============================
+======================= 36 passed in 14.89s =======================
 ```
 
 ### 13.4 Deterministic Execution Guarantees
@@ -1555,9 +1933,10 @@ TradePilot is engineered for research, education, and paper trading:
 
 ## 16. Future Development and Research Roadmap
 
-### 16.1 Phase 1: Operational Hardening and Version Control
-- Enforce pre-commit hooks and GitHub Actions CI workflows to execute `pytest -v` automatically on pull requests.
-- Integrate code formatters (`black`, `ruff`) to enforce PEP 8 style standards across the codebase.
+### 16.1 Phase 1: Operational Hardening and CI/CD Automation [COMPLETED]
+- **Continuous Integration Pipeline:** Implemented automated GitHub Actions workflow (`.github/workflows/ci.yml`) triggering on every commit and pull request.
+- **Automated Validation:** Enforces PEP 8 style standards, dependency audits, execution of the full 36-test `pytest -v` suite, and compilation of the Next.js 16 production bundle.
+- **Repository Hygiene:** Clean root `.gitignore` protecting credentials, runtime caches, MLflow SQLite stores, and local DVC storage caches.
 
 ### 16.2 Phase 2: Dynamic Feature Engineering and Target Labeling
 - **Dynamic Volatility Thresholds (Triple Barrier Method):** Replace the static $\pm 1\%$ threshold with dynamic barriers scaled by daily Average True Range (ATR), incorporating upper, lower, and horizontal time-stop barriers.
@@ -1576,17 +1955,29 @@ TradePilot is engineered for research, education, and paper trading:
 - **MLflow Experiment Tracking:** Implemented `src/tradepilot/tracking.py` using SQLite backend (`sqlite:///mlflow.db`) under experiment `TradePilot-Stock-Direction`.
 - **Comprehensive Logging:** Automated logging of 30+ hyperparameters, 32+ validation and test metrics, feature importance charts, classification reports, and serialized model pipelines.
 - **Backtest Run Tracking:** Separate tracking for portfolio simulations recording Sharpe ratios, drawdowns, equity curves, and trade ledgers.
-- **Future MLOps Extension Scope:** Connect cloud remote storage (AWS S3, Google Cloud Storage, Azure Blob), configure automated Model Registry staging-to-production promotion, and integrate data drift monitoring via Evidently AI.
 
-### 16.5 Phase 5: Dynamic Risk Management and Sizing Strategies
-- **Volatility-Targeted Sizing:** Size position allocations inversely proportional to rolling volatility (Risk Parity).
-- **Trailing Stop-Loss & Take-Profit:** Implement dynamic trailing stops in `BacktestEngine` to lock in gains and truncate tail drawdowns.
-- **Sector Concentration Limits:** Restrict maximum portfolio allocation within any single GICS economic sector to $\le 30\%$.
+### 16.5 Phase 5: Dynamic Risk Management and Pre-Trade Safeguards [COMPLETED]
+- **Centralized Risk Engine (`CentralizedRiskEngine`):** Sequential execution of 10+ pre-trade quantitative checks on every automated and manual order intent.
+- **Exposure Safeguards:** Hard limits capping maximum position size at 10.0%, maximum concurrent holdings at 10 equities, and gross exposure at 95.0%.
+- **Daily Drawdown Circuit Breaker:** Automated kill switch tripping whenever daily portfolio losses breach 5.0% of marked-to-market equity.
+- **Global Emergency Stop:** Administrative kill switch canceling open orders and rejecting new submissions across all accounts.
 
-### 16.6 Phase 6: Automated Paper-Trading Execution Service
-- Connect the signal generator to Alpaca's live paper-trading API endpoint via scheduled cron or task workers.
-- Automatically execute orders at market open, stream fills via WebSockets, and log daily performance reports.
-- Implement an automated alerting service (Slack / Discord webhooks) for order confirmations and risk threshold breaches.
+### 16.6 Phase 6: Automated Paper-Trading Execution Service & Next.js Dashboard [COMPLETED]
+- **Dual Broker Adapters:** High-fidelity `MockBrokerAdapter` with deterministic 5 bps slippage and fee simulation, coupled with official `AlpacaPaperBroker` using `alpaca-py` with strict paper validation and IEX feed handling.
+- **Autonomous Strategy Worker:** Standalone daemon (`worker.py`) cycling through model inference, signal generation, risk gating, and brokerage order execution.
+- **Versioned REST API:** 25+ authenticated endpoints across 8 resource routers built with FastAPI, Pydantic v2, and SQLAlchemy 2.0 with Alembic migrations.
+- **Next.js 16 Financial Terminal:** Modern trading dashboard featuring real-time equity curves, interactive candlestick/volume charts, probability distribution bars, and order lifecycle management.
+- **AWS Cloud Readiness:** Production Dockerfiles, `docker-compose.yml`, and Terraform IaC for Amazon ECS Fargate, RDS PostgreSQL 15, ALB, S3, Secrets Manager, and CloudWatch.
+
+### 16.7 Phase 7: Real-Time WebSockets, Order Book Depth & L2 Feed Integration
+- **Streaming Market Feeds:** Interfacing with Alpaca Real-Time WebSocket API (`alpaca-py.live`) to ingest live 1-minute and tick trade bars.
+- **Sub-Second Order Routing:** Evaluating streaming quotes against model signals with low-latency execution dispatch.
+- **Level 2 Market Depth:** Modeling order book bid/ask queues, liquidity depletion, and dynamic market impact functions.
+
+### 16.8 Phase 8: Multi-Agent LLM Sentiment Fusion & Alternative Data
+- **Financial News Sentiment:** Ingesting real-time corporate press releases and financial news feeds, scoring sentiment using open-source financial LLMs (e.g., FinBERT, Llama 3).
+- **SEC Filing Analysis:** Automated extraction of risk factors and executive commentary from quarterly 10-Q and annual 10-K filings.
+- **Multi-Modal Alpha Blending:** Combining quantitative technical indicators with qualitative sentiment embeddings in an ensemble decision framework.
 
 ---
 
@@ -1701,5 +2092,159 @@ During documentation research and MLOps integration, important architectural ref
 - Verified that `.env` is loaded exclusively via `python-dotenv`.
 - Verified that a comprehensive root `.gitignore` is active and protects secrets, virtual environments, DVC internal caches, and MLflow run databases from accidental version control exposure.
 
+### 19.8 Version 1.0.0 Production Application Release Audit
+The v1.0.0 full production application release underwent comprehensive validation:
+1. **Automated Test Suite Expansion:** Expanded from 17 baseline machine-learning tests to **36 total automated tests** across 8 modules. Verified 100% pass rate (`pytest -v`) in 14.89s under Python 3.10.7.
+2. **Frontend Build Verification:** Next.js 16.4.3 production compilation verified (`npm run build`) in `frontend/` with zero TypeScript errors, valid Route types, and optimized static asset packaging.
+3. **Database Migration Verification:** Initial migration `934fa89e0077_initial_schema.py` verified via `alembic upgrade head`, generating 12 relational tables with foreign keys and indexes.
+4. **Paper Trading Safeguard Verification:** Asserted that `TRADING_MODE` is locked to `PAPER` across settings, broker adapters, and the centralized risk engine. The system programmatically refuses order submission if paper mode cannot be verified.
+5. **API Security & RBAC:** Verified JWT bearer token authentication, bcrypt password hashing, and role-based permissions (`admin`, `trader`, `viewer`).
+6. **Containerization & IaC:** Verified Dockerfiles (`Dockerfile.api`, `Dockerfile.worker`, `Dockerfile.frontend`), `docker-compose.yml`, and Terraform modules for AWS ECS Fargate, Multi-AZ RDS PostgreSQL 15, ALB, S3, Secrets Manager, and CloudWatch.
+
+---
+
+## 20. Production Application Architecture, API, Agent Execution, and Cloud Deployment
+
+### 20.1 Architectural Expansion Overview
+Following the successful establishment of the Machine Learning foundation, feature engineering pipelines, and DVC/MLflow MLOps tracking, TradePilot was expanded into a complete production-grade software system:
+1. **Versioned REST API (`/api/v1`)**: Implemented using FastAPI, Pydantic v2, and SQLAlchemy 2.0 with JWT authentication and Role-Based Access Control (RBAC).
+2. **Autonomous Strategy Agent & Broker Adapters**: High-reliability paper-trading agent supporting both official Alpaca Paper Trading APIs (`alpaca-py`) and an offline, deterministic `MockBrokerAdapter` with slippage and fee simulation.
+3. **Centralized Risk Management Engine**: Enforces 10 quantitative pre-trade risk checks, daily drawdown limits, and an emergency kill switch.
+4. **Focused Financial Dashboard**: Built with Next.js 16, TypeScript, Tailwind CSS, and Lucide icons featuring real-time equity curves, interactive candlestick charts, probability distributions, order management, and agent controls.
+5. **AWS Cloud-Ready Deployment**: Containerized multi-service architecture (FastAPI API, Background Worker, PostgreSQL, Next.js Frontend) with Terraform Infrastructure-as-Code for Amazon ECS Fargate, RDS PostgreSQL, ALB, S3, Secrets Manager, and CloudWatch.
+
+```mermaid
+flowchart TD
+    subgraph Frontend Client
+        UI[Next.js 16 Dashboard\nDashboard | Markets | Predictions | Portfolio | Orders | Risk]
+    end
+
+    subgraph Backend Application
+        API[FastAPI Server :8000\nAuth | Markets | Predictions | Portfolio | Orders | Risk]
+        Worker[Background Worker Process\nAutonomous Scheduled Trading Loop]
+        Risk[Centralized Risk Engine\n10 Quantitative Pre-Trade Safeguards]
+        Agent[Trading Agent\nInference | Signals | Order Sizing | Reconciliation]
+    end
+
+    subgraph Execution & Data
+        Broker[Broker Adapter\nAlpaca Paper API / Mock Simulation]
+        DB[(PostgreSQL / SQLite\nAlembic Migrations)]
+        ModelStore[Model Artifacts\nbest_model.joblib & metadata.json]
+    end
+
+    UI <-->|REST API / JWT| API
+    API -->|Inspect & Control| DB
+    Worker -->|Heartbeat & Cycles| DB
+    Worker --> Agent
+    Agent --> Risk
+    Risk -->|Approved| Broker
+    Agent -->|Inference| ModelStore
+    Broker -->|Reconciliation| DB
+```
+
+### 20.2 Versioned REST API Endpoints (`/api/v1`)
+The FastAPI backend serves structured, documented endpoints under `/api/v1`:
+
+| Area | HTTP Method & Path | Description & Access Control |
+|---|---|---|
+| **System & Health** | `GET /health` | Process liveness probe (Public) |
+| | `GET /ready` | Dependency readiness probe (DB, Model, Paper Mode) |
+| | `GET /api/v1/system/status` | Detailed operational state, uptime, and database connectivity |
+| **Authentication** | `POST /api/v1/auth/login-json` | Authenticates credentials and returns JWT Bearer token |
+| | `GET /api/v1/auth/me` | Returns current user profile and role |
+| **Market Data** | `GET /api/v1/markets/symbols` | Approved trading symbols universe |
+| | `GET /api/v1/markets/bars` | Historical daily OHLCV bars (`symbol`, `limit`) |
+| | `GET /api/v1/markets/latest` | Latest closing prices and daily percentage changes |
+| | `GET /api/v1/markets/status` | Market data connectivity and staleness metric |
+| **Predictions & Strategy** | `GET /api/v1/predictions/latest` | Latest ML class probabilities (`prob_up`, `prob_neutral`, `prob_down`) |
+| | `POST /api/v1/predictions/run` | Triggers immediate inference cycle across universe (Trader/Admin) |
+| | `GET /api/v1/signals` | Strategy signals (`BUY`, `EXIT`, `HOLD`) with rule reasoning |
+| | `GET /api/v1/models/active` | Active model metadata, algorithm, features, and test metrics |
+| **Portfolio & Positions** | `GET /api/v1/portfolio` | Account equity, cash balance, buying power, and exposure % |
+| | `GET /api/v1/portfolio/positions` | Open holdings, shares, entry price, current value, unrealized P&L |
+| | `GET /api/v1/portfolio/equity` | Historical mark-to-market equity curve timeline points |
+| **Orders & Trades** | `GET /api/v1/orders` | Submitted paper orders and lifecycle statuses |
+| | `GET /api/v1/orders/{id}` | Order details by client or broker order ID |
+| | `GET /api/v1/trades` | Execution fills ledger and transaction fees |
+| | `POST /api/v1/orders` | Validated manual paper order entry gated by Risk Engine |
+| **Agent Control** | `GET /api/v1/agent/status` | Agent lifecycle state (`RUNNING`, `PAUSED`, `STOPPED`), heartbeat, mode |
+| | `POST /api/v1/agent/start` | Starts autonomous trading agent loop (Trader/Admin) |
+| | `POST /api/v1/agent/pause` | Pauses agent (stops new orders while maintaining holdings) |
+| | `POST /api/v1/agent/stop` | Stops agent strategy loop |
+| | `POST /api/v1/agent/emergency-stop`| Global kill switch: cancels open orders & blocks trading (Admin) |
+| **Risk & Activity** | `GET /api/v1/risk/status` | Real-time risk limit utilization & circuit breaker status |
+| | `GET /api/v1/risk/config` | Active quantitative thresholds and slippage parameters |
+| | `GET /api/v1/risk/events` | Audit log of blocked orders and risk rule trips |
+| | `GET /api/v1/risk/audit/logs` | Append-only administrative action audit trail (Admin) |
+
+### 20.3 Database Architecture & Migrations
+The database layer uses SQLAlchemy 2.0 with Alembic version control:
+- **`users`**: User identity, hashed passwords (bcrypt), and roles (`admin`, `trader`, `viewer`).
+- **`agent_state`**: Singleton row tracking operational state, strict `PAPER` mode safeguard, heartbeat, and last cycle timestamp.
+- **`trading_cycles`**: Execution records capturing cycle duration, symbols processed, orders generated, and errors.
+- **`predictions`**: Empirical class probability distribution per symbol evaluated during cycles.
+- **`signals`**: Strategy signals (`BUY`, `EXIT`, `HOLD`) derived from prediction thresholds.
+- **`order_intents`**: Internal pre-submission proposals validated by the Centralized Risk Engine.
+- **`broker_orders`**: Actual orders dispatched to the paper broker with status lifecycle tracking (`SUBMITTED`, `FILLED`, `CANCELED`, `REJECTED`).
+- **`order_fills`**: Execution records with execution price, filled shares, and transaction fees.
+- **`position_snapshots`**: Reconciled holdings snapshot with market values and unrealized P&L.
+- **`portfolio_snapshots`**: Historical mark-to-market equity timeline for charting.
+- **`risk_events`**: Immutable record of risk rule breaches and blocked order intents.
+- **`audit_logs`**: Append-only security and operational audit trail.
+
+### 20.4 Centralized Risk Engine & Pre-Trade Safeguards
+All order intents (both automated from model signals and manual from the UI) must pass through `CentralizedRiskEngine.evaluate_order(...)`:
+1. **Paper-Only Safeguard**: Refuses execution if mode is not verified as `PAPER`.
+2. **Circuit Breaker / Emergency Stop**: Blocks all orders if the emergency stop was triggered.
+3. **Account Trading Status**: Refuses execution if broker account indicates blocked trading.
+4. **Approved Universe Check**: Refuses orders for symbols outside the approved universe.
+5. **Quantity & Order Sizing**: Enforces positive integer share quantities and valid order types.
+6. **Duplicate Order Prevention**: Deduplicates client order IDs and prevents concurrent pending orders on the same symbol.
+7. **Market Data Staleness**: Refuses execution if historical lookback data exceeds freshness tolerance.
+8. **Maximum Position Size**: Caps single stock holding at `10%` of total portfolio equity.
+9. **Maximum Concurrent Positions**: Caps active stock holdings at `10` distinct components.
+10. **Maximum Gross Exposure**: Caps total invested capital at `95%` of equity.
+11. **Buying Power & Cash Check**: Ensures adequate available cash/buying power prior to order submission.
+12. **Daily Drawdown Circuit Breaker**: Trips automatic kill switch if daily losses exceed `5%` of equity.
+
+### 20.5 Autonomous Background Worker
+The background strategy loop runs in an independent process (`src/tradepilot/execution/worker.py`):
+- Executes on a configurable schedule (default: 60 seconds).
+- Heartbeat tracking to detect worker staleness.
+- Reconciles broker state before and after each cycle.
+- Graceful shutdown on `SIGINT` / `SIGTERM` signals.
+
+### 20.6 Next.js 16 Trading Dashboard
+The frontend application in `frontend/` provides a focused, high-density financial terminal:
+- **Dashboard**: Real-time equity, buying power, daily P&L, exposure gauge, interactive SVG equity timeline chart, active holdings, and recent signals.
+- **Markets**: Symbol selector, current prices, day change, interactive candlestick/volume chart, and OHLCV history table.
+- **Predictions & Signals**: Active model architecture card, test metrics, on-demand inference trigger, class probability bars, and rule reasoning.
+- **Portfolio**: Asset allocation stacked bar, cash percentage, position details, unrealized P&L ($ and %), and exposure percentage.
+- **Orders & Trades**: Manual paper order entry form with risk feedback, order lifecycle table with status badges, and execution fills ledger.
+- **Agent Control**: Start/Pause/Stop agent controls, heartbeat status, worker cadence, and prominent emergency kill switch with confirmation modal.
+- **Risk & Activity**: Real-time utilization meters (Exposure, Positions, Drawdown), configured boundaries, risk events log, and audit trail.
+
+### 20.7 AWS Cloud Deployment Infrastructure
+- **Amazon ECS on AWS Fargate**: Serverless containers for the API and Background Worker.
+- **Application Load Balancer**: Public entry point terminating HTTPS and routing traffic to API tasks.
+- **Amazon RDS for PostgreSQL 15**: Multi-AZ relational database with automated daily snapshots and point-in-time recovery.
+- **Amazon S3**: Secure bucket for model artifacts, training data, and backtest reports.
+- **AWS Secrets Manager**: Storing Alpaca credentials and database connection strings.
+- **Amazon CloudWatch**: Centralized logging and alarms for error rates, CPU/memory, and circuit breaker events.
+- **Terraform IaC**: Complete infrastructure definitions in `deploy/terraform/` (`main.tf`, `variables.tf`, `outputs.tf`).
+- **CI/CD Pipeline**: GitHub Actions workflow in `.github/workflows/ci.yml` verifying Python test suites, linting, and Next.js frontend builds.
+
+### 20.8 Final Test Suite Verification
+- **Total Automated Tests:** **36 of 36 Passing (100% pass rate)**.
+  - Data Validation Tests: 6 tests passing.
+  - Execution & Portfolio Tests: 3 tests passing.
+  - Feature Engineering Tests: 4 tests passing.
+  - Pipeline Reproducibility Tests: 2 tests passing.
+  - Signal Generation Tests: 1 test passing.
+  - Chronological Data Split Tests: 1 test passing.
+  - REST API Endpoint Integration Tests: 11 tests passing (`tests/test_api_endpoints.py`).
+  - Trading Agent & Risk Engine Unit Tests: 8 tests passing (`tests/test_trading_agent_and_risk.py`).
+
 ---
 *End of Complete Technical Documentation for TradePilot.*
+

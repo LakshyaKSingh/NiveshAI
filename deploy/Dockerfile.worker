@@ -1,0 +1,43 @@
+# TradePilot Background Strategy Worker Dockerfile
+FROM python:3.10-slim AS base
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies
+COPY requirements.txt pyproject.toml /app/
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir \
+    fastapi==0.162.0 \
+    uvicorn==0.54.0 \
+    pydantic==2.14.1 \
+    pydantic-settings==2.15.0 \
+    SQLAlchemy==2.0.55 \
+    alembic==1.20.1 \
+    alpaca-py==0.44.0 \
+    httpx==0.28.1 \
+    pyjwt==2.15.1 \
+    python-multipart==0.0.32 \
+    bcrypt==5.0.0 \
+    email-validator==2.3.0 \
+    psycopg2-binary==2.9.10
+
+# Copy application code, models, and migrations
+COPY src/ /app/src/
+COPY models/ /app/models/
+COPY alembic/ /app/alembic/
+COPY alembic.ini /app/
+COPY data/raw/stock_ohlcv_2021_2025.csv /app/data/raw/stock_ohlcv_2021_2025.csv
+
+# Run autonomous background worker
+CMD ["python", "-m", "tradepilot.execution.worker"]

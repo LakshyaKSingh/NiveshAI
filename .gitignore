@@ -159,3 +159,25 @@ Thumbs.db
 ehthumbs.db
 $RECYCLE.BIN/
 *.stackdump
+
+# ------------------------------------------------------------------------------
+# 10. Node.js & Next.js Frontend
+# ------------------------------------------------------------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# ------------------------------------------------------------------------------
+# 11. Terraform & Local Containers
+# ------------------------------------------------------------------------------
+deploy/terraform/.terraform/
+deploy/terraform/.terraform.lock.hcl
+deploy/terraform/*.tfstate
+deploy/terraform/*.tfstate.*
+deploy/terraform/*.tfplan
+pgdata/
+
