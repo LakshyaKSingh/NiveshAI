@@ -1,0 +1,25 @@
+# ==============================================================================
+# TradePilot — Central Parameter Configuration (DVC & MLflow)
+# ==============================================================================
+
+features:
+  horizon_days: 5
+  target_threshold: 0.01
+
+train:
+  random_seed: 42
+  train_end_year: 2023
+  val_year: 2024
+  test_year: 2025
+  purge_boundary_days: 5
+
+backtest:
+  initial_capital: 100000.0
+  max_positions: 10
+  allocation_per_position: 0.10
+  entry_threshold: 0.40
+  holding_period_days: 5
+  slippage_bps: 5.0
+  commission_bps: 5.0
+  allow_short: false
+  benchmark_name: "Buy_and_Hold_Equal_Weight"

@@ -1,0 +1,76 @@
+# ==============================================================================
+# TradePilot — DVC Multi-Stage Reproducible Pipeline Configuration
+# ==============================================================================
+
+stages:
+  features:
+    cmd: python -m tradepilot.features.build_features
+    deps:
+      - data/raw/stock_ohlcv_2021_2025.csv
+      - src/tradepilot/features/build_features.py
+      - src/tradepilot/data/load_data.py
+      - src/tradepilot/data/validate_data.py
+    params:
+      - features.horizon_days
+      - features.target_threshold
+    outs:
+      - data/processed/stock_features_labeled.csv
+
+  train:
+    cmd: python -m tradepilot.pipelines.train_pipeline
+    deps:
+      - data/processed/stock_features_labeled.csv
+      - src/tradepilot/modeling/train_model.py
+      - src/tradepilot/modeling/split_data.py
+      - src/tradepilot/modeling/evaluate_model.py
+      - src/tradepilot/modeling/save_model.py
+      - src/tradepilot/pipelines/train_pipeline.py
+      - src/tradepilot/tracking.py
+    params:
+      - train.random_seed
+      - train.train_end_year
+      - train.val_year
+      - train.test_year
+      - train.purge_boundary_days
+    outs:
+      - models/best_model.joblib
+    metrics:
+      - reports/test_results.json:
+          cache: false
+      - reports/validation_results.csv:
+          cache: false
+    plots:
+      - reports/confusion_matrix.csv:
+          cache: false
+
+  backtest:
+    cmd: python -m tradepilot.pipelines.backtest_pipeline
+    deps:
+      - data/raw/stock_ohlcv_2021_2025.csv
+      - data/processed/stock_features_labeled.csv
+      - models/best_model.joblib
+      - src/tradepilot/backtesting/signals.py
+      - src/tradepilot/backtesting/execution.py
+      - src/tradepilot/backtesting/portfolio.py
+      - src/tradepilot/backtesting/metrics.py
+      - src/tradepilot/backtesting/engine.py
+      - src/tradepilot/pipelines/backtest_pipeline.py
+      - src/tradepilot/tracking.py
+    params:
+      - backtest.initial_capital
+      - backtest.max_positions
+      - backtest.allocation_per_position
+      - backtest.entry_threshold
+      - backtest.holding_period_days
+      - backtest.slippage_bps
+      - backtest.commission_bps
+      - backtest.allow_short
+      - backtest.benchmark_name
+    metrics:
+      - reports/backtest_summary.json:
+          cache: false
+    plots:
+      - reports/backtest_equity_curve.csv:
+          cache: false
+      - reports/benchmark_comparison.csv:
+          cache: false

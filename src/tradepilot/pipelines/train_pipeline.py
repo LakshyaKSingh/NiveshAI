@@ -10,7 +10,7 @@ validation comparison, and final test evaluation.
 
 import logging
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 
@@ -19,6 +19,8 @@ from tradepilot.config import (
     DEFAULT_MODEL_CONFIG,
     DataConfig,
     ModelConfig,
+    get_data_config,
+    get_model_config,
 )
 from tradepilot.data.load_data import load_processed_features
 from tradepilot.data.validate_data import validate_features_dataset
@@ -26,6 +28,7 @@ from tradepilot.modeling.evaluate_model import evaluate_classifier, select_best_
 from tradepilot.modeling.save_model import save_model_artifacts
 from tradepilot.modeling.split_data import chronological_split
 from tradepilot.modeling.train_model import get_candidate_pipelines, train_candidates
+from tradepilot.tracking import log_training_to_mlflow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,46 +39,50 @@ logger = logging.getLogger("tradepilot.train_pipeline")
 
 
 def run_train_pipeline(
-    data_config: DataConfig = DEFAULT_DATA_CONFIG,
-    model_config: ModelConfig = DEFAULT_MODEL_CONFIG,
+    data_config: Optional[DataConfig] = None,
+    model_config: Optional[ModelConfig] = None,
 ) -> Dict[str, Any]:
     """
-    Execute the end-to-end model training, validation, and evaluation pipeline.
+    Execute the end-to-end model training, validation, evaluation, and MLflow logging pipeline.
     """
     logger.info("=" * 80)
     logger.info("Starting TradePilot ML Training Pipeline")
     logger.info("=" * 80)
 
+    # Resolve configs with params.yaml overrides if defaults are requested
+    data_cfg = data_config or get_data_config()
+    model_cfg = model_config or get_model_config()
+
     # 1. Load and validate processed dataset
-    df = load_processed_features(data_config.processed_features_path)
+    df = load_processed_features(data_cfg.processed_features_path)
     validate_features_dataset(
         df=df,
-        feature_cols=data_config.feature_cols,
-        target_col=data_config.target_col,
-        prohibited_cols=data_config.prohibited_cols,
-        expected_classes=data_config.target_classes,
+        feature_cols=data_cfg.feature_cols,
+        target_col=data_cfg.target_col,
+        prohibited_cols=data_cfg.prohibited_cols,
+        expected_classes=data_cfg.target_classes,
     )
 
     # 2. Chronological split with boundary purging
     train_df, val_df, test_df, split_info = chronological_split(
         df=df,
-        train_end_year=model_config.train_end_year,
-        val_year=model_config.val_year,
-        test_year=model_config.test_year,
-        purge_days=data_config.purge_boundary_days,
+        train_end_year=model_cfg.train_end_year,
+        val_year=model_cfg.val_year,
+        test_year=model_cfg.test_year,
+        purge_days=data_cfg.purge_boundary_days,
     )
 
-    X_train = train_df[data_config.feature_cols]
-    y_train = train_df[data_config.target_col]
+    X_train = train_df[data_cfg.feature_cols]
+    y_train = train_df[data_cfg.target_col]
 
-    X_val = val_df[data_config.feature_cols]
-    y_val = val_df[data_config.target_col]
+    X_val = val_df[data_cfg.feature_cols]
+    y_val = val_df[data_cfg.target_col]
 
-    X_test = test_df[data_config.feature_cols]
-    y_test = test_df[data_config.target_col]
+    X_test = test_df[data_cfg.feature_cols]
+    y_test = test_df[data_cfg.target_col]
 
     # 3. Fit candidate models on Training fold
-    candidate_pipelines = get_candidate_pipelines(random_seed=model_config.random_seed)
+    candidate_pipelines = get_candidate_pipelines(random_seed=model_cfg.random_seed)
     fitted_pipelines = train_candidates(candidate_pipelines, X_train, y_train)
 
     # 4. Evaluate candidates on Validation fold (2024)
@@ -85,7 +92,7 @@ def run_train_pipeline(
             pipeline=pipe,
             X=X_val,
             y=y_val,
-            target_classes=data_config.target_classes,
+            target_classes=data_cfg.target_classes,
         )
 
     # Display comparison table
@@ -117,13 +124,13 @@ def run_train_pipeline(
         pipeline=best_pipeline,
         X=X_test,
         y=y_test,
-        target_classes=data_config.target_classes,
+        target_classes=data_cfg.target_classes,
     )
     print(f"  Macro F1           : {test_metrics['macro_f1']:.4f}")
     print(f"  Balanced Accuracy  : {test_metrics['balanced_accuracy']:.4f}")
     print(f"  Overall Accuracy   : {test_metrics['accuracy']:.4f}")
     print("\n  Per-Class Metrics:")
-    for cls in data_config.target_classes:
+    for cls in data_cfg.target_classes:
         p = test_metrics["per_class"][cls]["precision"]
         r = test_metrics["per_class"][cls]["recall"]
         f = test_metrics["per_class"][cls]["f1_score"]
@@ -145,8 +152,19 @@ def run_train_pipeline(
         val_metrics=val_metrics,
         test_metrics=test_metrics,
         split_info=split_info,
-        data_config=data_config,
-        model_config=model_config,
+        data_config=data_cfg,
+        model_config=model_cfg,
+    )
+
+    # 8. Log experiment to MLflow
+    mlflow_run_id = log_training_to_mlflow(
+        best_model_name=best_model_name,
+        best_pipeline=best_pipeline,
+        val_metrics=val_metrics,
+        test_metrics=test_metrics,
+        split_info=split_info,
+        data_config=data_cfg,
+        model_config=model_cfg,
     )
 
     logger.info("Training pipeline completed successfully.")
@@ -155,6 +173,7 @@ def run_train_pipeline(
         "val_metrics": val_metrics,
         "test_metrics": test_metrics,
         "artifacts": saved_paths,
+        "mlflow_run_id": mlflow_run_id,
     }
 
 

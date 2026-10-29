@@ -1,45 +1,88 @@
-# ==========================================
+# ==============================================================================
 # TradePilot — Git Ignore Configuration
-# ==========================================
+# ==============================================================================
 
-# ------------------------------------------
-# Environment & Secrets (CRITICAL)
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 1. Environment Variables, API Keys & Secrets (CRITICAL)
+# ------------------------------------------------------------------------------
 .env
 .env.*
 *.env
 *.key
 *.pem
+*.cert
+*.crt
 secrets/
+credentials/
+config/secrets.*
 
-# ------------------------------------------
-# Virtual Environments
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 2. Virtual Environments & Python Binaries
+# ------------------------------------------------------------------------------
 .venv/
 venv/
 env/
 ENV/
 env.bak/
 venv.bak/
+bin/
+include/
+lib/
+Scripts/
 
-# ------------------------------------------
-# Python Bytecode & Runtime Caches
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 3. MLOps & Experiment Tracking (DVC & MLflow)
+# ------------------------------------------------------------------------------
+# MLflow SQLite database & journal/write-ahead logs
+mlflow.db
+mlflow.db*
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# MLflow artifact stores
+mlruns/
+mlartifacts/
+.trash/
+
+# DVC local storage remote and internal caches
+.dvc_storage/
+.dvc/cache/
+.dvc/tmp/
+.dvc/plots/
+
+# Data & Model binary backups (managed via DVC pointers: *.dvc & dvc.lock)
+data/raw/*.csv
+!data/raw/.gitignore
+data/processed/*.csv
+!data/processed/.gitignore
+models/*.joblib
+!models/.gitignore
+*.joblib
+*.pkl
+*.pickle
+*.parquet
+*.h5
+
+# ------------------------------------------------------------------------------
+# 4. Python Bytecode & Runtime Caches
+# ------------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+*.pyo
 
-# ------------------------------------------
-# Packaging & Build Distribution
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 5. Packaging, Builds & Distributions
+# ------------------------------------------------------------------------------
 build/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -51,9 +94,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# ------------------------------------------
-# Testing, Coverage & Type Checking
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 6. Testing, Code Coverage & Linting Caches
+# ------------------------------------------------------------------------------
 .pytest_cache/
 .coverage
 .coverage.*
@@ -73,15 +116,15 @@ dmypy.json
 .pytype/
 .ruff_cache/
 
-# ------------------------------------------
-# Jupyter Notebooks (if used)
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 7. Jupyter & Interactive Notebooks
+# ------------------------------------------------------------------------------
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
-# ------------------------------------------
-# IDEs & Editor Configuration
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 8. IDEs, Editors & AI Agent Workspaces
+# ------------------------------------------------------------------------------
 .vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -93,23 +136,26 @@ dmypy.json
 *.swp
 *.swo
 *~
+*.bak
+*.tmp
+*.temp
+.agents/
+.gemini/
+scratch/
 
-# ------------------------------------------
-# Operating System Artifacts
-# ------------------------------------------
+# ------------------------------------------------------------------------------
+# 9. Operating System Artifacts
+# ------------------------------------------------------------------------------
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-[Dd]esktop.ini
 
-# ------------------------------------------
-# Optional / Large Datasets & Models
-# Note: Uncomment if you manage large files via DVC/cloud storage
-# ------------------------------------------
-# data/raw/*.csv
-# data/processed/*.csv
-# models/*.joblib
+# Windows
+[Dd]esktop.ini
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+*.stackdump

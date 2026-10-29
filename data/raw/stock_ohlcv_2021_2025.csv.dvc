@@ -1,0 +1,5 @@
+outs:
+- md5: 7c345eed43c2022a5e0a93be6fc5f18c
+  size: 4169377
+  hash: md5
+  path: stock_ohlcv_2021_2025.csv

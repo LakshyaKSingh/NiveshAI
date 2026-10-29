@@ -10,10 +10,10 @@
 | :--- | :--- |
 | **Project Title** | TradePilot — ML-Based Automated Stock Trading and Portfolio Management System |
 | **Document Classification** | Complete Technical Documentation & System Specification |
-| **Software Version** | `0.1.0` |
+| **Software Version** | `0.2.0` (MLOps-Enabled with DVC & MLflow) |
 | **Date of Verification** | October 2026 |
 | **Target Audience** | Academic Evaluators, Engineering Faculty, Technical Reviewers, Software Engineers, Quant Researchers |
-| **System Implementation** | Python 3.10+, Scikit-Learn, Pandas, NumPy, Alpaca Market Data API |
+| **System Implementation** | Python 3.10+, Scikit-Learn, Pandas, NumPy, Alpaca Market Data API, DVC, MLflow |
 | **Primary Code Location** | `src/tradepilot/` |
 | **Test Suite Status** | 17 of 17 Automated Tests Passing (`pytest -v`) |
 
@@ -39,12 +39,13 @@
    - [3.2 Data Ingestion & Market Connectivity](#32-data-ingestion--market-connectivity)
    - [3.3 Machine Learning and Numerical Computation](#33-machine-learning-and-numerical-computation)
    - [3.4 Quality Assurance and Testing Framework](#34-quality-assurance-and-testing-framework)
-   - [3.5 Clarification on Emerging and Future Stack Components](#35-clarification-on-emerging-and-future-stack-components)
+   - [3.5 MLOps and Experiment Tracking Stack (DVC & MLflow)](#35-mlops-and-experiment-tracking-stack-dvc--mlflow)
+   - [3.6 Clarification on Emerging and Future Stack Components](#36-clarification-on-emerging-and-future-stack-components)
 4. [System Architecture and Component Design](#4-system-architecture-and-component-design)
    - [4.1 High-Level Architecture Diagram](#41-high-level-architecture-diagram)
-   - [4.2 End-to-End Data and Control Flow](#42-end-to-end-data-and-control-flow)
+   - [4.2 End-to-End Data, MLOps, and Control Flow](#42-end-to-end-data-mlops-and-control-flow)
    - [4.3 Architectural Decomposition and Component Responsibilities](#43-architectural-decomposition-and-component-responsibilities)
-   - [4.4 Separation of Concerns: Prediction, Strategy, Execution, and Risk](#44-separation-of-concerns-prediction-strategy-execution-and-risk)
+   - [4.4 Separation of Concerns: Prediction, Strategy, Execution, Risk, and MLOps](#44-separation-of-concerns-prediction-strategy-execution-risk-and-mlops)
    - [4.5 Design Principles and Modularity Rationale](#45-design-principles-and-modularity-rationale)
 5. [Repository and File Structure](#5-repository-and-file-structure)
    - [5.1 Complete Workspace Directory Tree](#51-complete-workspace-directory-tree)
@@ -87,21 +88,23 @@
     - [10.8 Empirical Strategy Performance vs. Equal-Weight Buy-and-Hold](#108-empirical-strategy-performance-vs-equal-weight-buy-and-hold)
 11. [Detailed Source Code and Module Reference](#11-detailed-source-code-and-module-reference)
     - [11.1 Consolidated Module Reference Matrix](#111-consolidated-module-reference-matrix)
-    - [11.2 Package Configuration: `tradepilot.config`](#112-package-configuration-tradepilotconfig)
+    - [11.2 Package Configuration & Parameter Management: `tradepilot.config` and `params.yaml`](#112-package-configuration--parameter-management-tradepilotconfig-and-paramsyaml)
     - [11.3 Data Ingestion and Validation: `tradepilot.data`](#113-data-ingestion-and-validation-tradepilotdata)
-    - [11.4 Feature Engineering Engine: `tradepilot.features`](#114-feature-engineering-engine-tradepilotfeatures)
+    - [11.4 Feature Engineering Engine & CLI: `tradepilot.features`](#114-feature-engineering-engine--cli-tradepilotfeatures)
     - [11.5 Modeling and Cross-Validation: `tradepilot.modeling`](#115-modeling-and-cross-validation-tradepilotmodeling)
     - [11.6 Backtesting Simulator: `tradepilot.backtesting`](#116-backtesting-simulator-tradepilotbacktesting)
-    - [11.7 Automated Pipelines: `tradepilot.pipelines`](#117-automated-pipelines-tradepilotpipelines)
-    - [11.8 Root Operational Entrypoints](#118-root-operational-entrypoints)
+    - [11.7 MLOps Experiment Tracking: `tradepilot.tracking`](#117-mlops-experiment-tracking-tradepilottracking)
+    - [11.8 Automated Pipelines & DVC Specification: `tradepilot.pipelines` and `dvc.yaml`](#118-automated-pipelines--dvc-specification-tradepilotpipelines-and-dvcyaml)
+    - [11.9 Root Operational Entrypoints](#119-root-operational-entrypoints)
 12. [Installation, Environment Setup, and Execution Guide](#12-installation-environment-setup-and-execution-guide)
     - [12.1 Environment Prerequisites](#121-environment-prerequisites)
     - [12.2 Windows PowerShell Virtual Environment Activation](#122-windows-powershell-virtual-environment-activation)
-    - [12.3 Editable Package Installation](#123-editable-package-installation)
+    - [12.3 Editable Package Installation & MLOps Dependencies](#123-editable-package-installation--mlops-dependencies)
     - [12.4 Secure Environment Variable Configuration](#124-secure-environment-variable-configuration)
-    - [12.5 Executing Data Ingestion, Model Training, and Backtesting](#125-executing-data-ingestion-model-training-and-backtesting)
-    - [12.6 Locating and Auditing Generated Artifacts](#126-locating-and-auditing-generated-artifacts)
-    - [12.7 Troubleshooting Common Operational Faults](#127-troubleshooting-common-operational-faults)
+    - [12.5 Executing DVC Pipelines, Reproducibility, and Backtesting](#125-executing-dvc-pipelines-reproducibility-and-backtesting)
+    - [12.6 Launching MLflow UI and Experiment Audit](#126-launching-mlflow-ui-and-experiment-audit)
+    - [12.7 Locating and Auditing Generated Artifacts](#127-locating-and-auditing-generated-artifacts)
+    - [12.8 Troubleshooting Common Operational Faults](#128-troubleshooting-common-operational-faults)
 13. [Quality Assurance, Automated Testing, and Reproducibility](#13-quality-assurance-automated-testing-and-reproducibility)
     - [13.1 Testing Architecture and Test Discovery](#131-testing-architecture-and-test-discovery)
     - [13.2 Breakdown of Automated Unit and Integration Tests](#132-breakdown-of-automated-unit-and-integration-tests)
@@ -117,14 +120,14 @@
     - [14.6 Predictive Accuracy vs. Portfolio Alpha Divergence](#146-predictive-accuracy-vs-portfolio-alpha-divergence)
 15. [Security, Governance, and Operational Considerations](#15-security-governance-and-operational-considerations)
     - [15.1 API Key and Secret Management](#151-api-key-and-secret-management)
-    - [15.2 Version Control Hygiene and Secret Leakage Prevention](#152-version-control-hygiene-and-secret-leakage-prevention)
+    - [15.2 Version Control Hygiene and Repository `.gitignore` Specification](#152-version-control-hygiene-and-repository-gitignore-specification)
     - [15.3 Paper Trading Isolation from Real Capital Execution](#153-paper-trading-isolation-from-real-capital-execution)
     - [15.4 Structured Logging, Auditability, and Run Failure Handling](#154-structured-logging-auditability-and-run-failure-handling)
 16. [Future Development and Research Roadmap](#16-future-development-and-research-roadmap)
     - [16.1 Phase 1: Operational Hardening and Version Control](#161-phase-1-operational-hardening-and-version-control)
     - [16.2 Phase 2: Dynamic Feature Engineering and Target Labeling](#162-phase-2-dynamic-feature-engineering-and-target-labeling)
     - [16.3 Phase 3: Walk-Forward Validation and Gradient Boosting Ensembles](#163-phase-3-walk-forward-validation-and-gradient-boosting-ensembles)
-    - [16.4 Phase 4: MLOps Integration (MLflow and DVC)](#164-phase-4-mlops-integration-mlflow-and-dvc)
+    - [16.4 Phase 4: MLOps Integration (MLflow and DVC) [COMPLETED]](#164-phase-4-mlops-integration-mlflow-and-dvc-completed)
     - [16.5 Phase 5: Dynamic Risk Management and Sizing Strategies](#165-phase-5-dynamic-risk-management-and-sizing-strategies)
     - [16.6 Phase 6: Automated Paper-Trading Execution Service](#166-phase-6-automated-paper-trading-execution-service)
 17. [Technical and Financial Glossary](#17-technical-and-financial-glossary)
@@ -163,14 +166,18 @@ TradePilot was designed from first principles to resolve these architectural vul
 - **Model Candidate Benchmarking:** Evaluates a `Majority_Baseline`, a `Logistic_Regression` classifier with `StandardScaler`, and a `Random_Forest` ensemble tuned with balanced class weights to counteract financial class imbalance.
 - **Friction-Aware Backtesting Engine:** Simulates realistic execution mechanics, queueing orders, filling at $t+1$ Open, maintaining solvency, and accounting for round-trip friction costs.
 - **Auditable Artifact Generation:** Serializes trained model pipelines (`best_model.joblib`), metadata schemas (`model_metadata.json`), daily equity curves, trade ledgers, and comparative benchmark reports.
+- **DVC Pipeline Versioning & Caching:** Multi-stage pipeline definition (`dvc.yaml`, `params.yaml`, `dvc.lock`) tracking dependencies, invalidating stale downstream stages, and caching datasets with a local portable storage remote (`.dvc_storage`).
+- **MLflow Experiment Tracking:** Local-first tracking backend (`sqlite:///mlflow.db`) capturing parameters, metrics across validation and test folds, feature importance charts, model binaries, and separate trading simulation runs under the `TradePilot-Stock-Direction` experiment.
 
 ### 1.5 Current Implementation Status
 The project is fully implemented, verified, and operational in `E:\Field Project\New Approach`. 
-- The complete pipeline executes deterministically from ingestion through backtesting.
-- All 17 automated tests in the test suite pass with 100% compliance.
-- Verified datasets span 50 equities from January 2021 through December 2025 (62,664 raw OHLCV rows; 59,964 clean, labeled feature rows).
+- The complete pipeline executes deterministically from ingestion through feature engineering, model training, and backtesting.
+- DVC pipeline execution (`dvc repro`) runs all 3 stages seamlessly and successfully invalidates/skips unchanged stages.
+- MLflow logs run parameters, model metrics, feature importances, and backtest results into an SQLite database with complete traceability to Git commits and DVC versions.
+- All 17 automated tests in the test suite pass with 100% compliance (`pytest -v`).
+- Verified datasets span 50 equities from January 2021 through December 2025 (62,664 raw OHLCV rows; 61,764/59,964 clean, labeled feature rows).
 - Model evaluation demonstrates that the Random Forest classifier successfully captures non-linear structure across all classes, outperforming baseline models on balanced accuracy and Macro F1.
-- Backtesting validates that while the strategy generates positive cumulative returns in both 2024 (+10.39%) and 2025 (+9.94%), frequent rebalancing frictions and cash-drag limitations restrict its ability to outperform a concentrated mega-cap bull-market benchmark.
+- Backtesting validates that while the strategy generates positive cumulative returns in both 2024 (+10.39%) and 2025 (+6.78% to +9.94%), frequent rebalancing frictions and cash-drag limitations restrict its ability to outperform a concentrated mega-cap bull-market benchmark.
 
 ### 1.6 Intended Users and Real-World Use Cases
 - **Academic Evaluators and University Faculty:** Reviewing student engineering rigor, machine learning methodology, time-series leak prevention, and software architecture.
@@ -224,7 +231,7 @@ The project is fully implemented, verified, and operational in `E:\Field Project
 | **Validation** | Chronological 3-way split with 5-day boundary purging | Purged Walk-Forward Cross-Validation, Combinatorial Purged CV |
 | **Trading Strategy** | Long-only event-driven execution with 5-day time exit | Long/short pairs, market-neutral hedging, stop-loss/take-profit |
 | **Execution Modeling** | Next-day Open execution, 5 bps slippage, 5 bps commissions | Limit order book simulation, partial fills, market impact models |
-| **Deployment & Ops** | Local CLI pipelines, file-based artifacts, automated test suite | MLflow server, DVC remote storage, Docker, live Alpaca trading bot |
+| **Deployment & Ops** | DVC multi-stage pipeline, local DVC remote storage (`.dvc_storage`), MLflow SQLite tracking (`sqlite:///mlflow.db`), automated test suite | Remote cloud S3/GCS DVC storage, production Model Registry promotion, Docker, live Alpaca trading bot |
 
 ---
 
@@ -236,6 +243,7 @@ TradePilot is built on **Python 3.10** (verified on Python 3.10.7 on Windows x86
 - **NumPy (>= 1.22.0):** Provides vectorized array computation, fast mathematical transformations, standard deviations, and matrix operations underlying scikit-learn models.
 - **Pandas (>= 2.0.0):** The primary tabular data engine utilized for time-series grouping, rolling window statistics (rolling mean, rolling standard deviation), date filtering, and ledger management.
 - **Pathlib:** Standard library module utilized throughout `tradepilot.config` to ensure cross-platform, deterministic path resolution relative to the repository root.
+- **PyYAML (`pyyaml >= 6.0`):** Parses `params.yaml` to dynamically supply hyperparameters to pipelines and configuration loaders.
 
 ### 3.2 Data Ingestion & Market Connectivity
 - **Alpaca Python SDK (`alpaca-py >= 0.44.0`):** The official modern SDK for interfacing with Alpaca Markets. TradePilot uses `StockHistoricalDataClient` to dispatch `StockBarsRequest` queries requesting daily bars with `DataFeed.IEX` and `Adjustment.ALL`.
@@ -250,16 +258,28 @@ TradePilot is built on **Python 3.10** (verified on Python 3.10.7 on Windows x86
   - `sklearn.ensemble.RandomForestClassifier`: The primary non-linear ensemble algorithm, tuned with `class_weight="balanced"`.
   - `sklearn.metrics`: Computes `accuracy_score`, `balanced_accuracy_score`, `f1_score(average="macro")`, `classification_report`, and `confusion_matrix`.
 - **Joblib (`joblib >= 1.3.0`):** High-efficiency serialization library used to persist trained scikit-learn pipeline objects to disk (`best_model.joblib`).
+- **Matplotlib (`matplotlib >= 3.7.0`):** Programmatically generates feature importance bar charts and performance plots for direct artifact logging to MLflow.
 
 ### 3.4 Quality Assurance and Testing Framework
 - **Pytest (`pytest >= 7.0.0`):** Testing framework that discovers and runs the 17 unit and integration tests under `tests/`. Pytest settings are defined directly in `pyproject.toml`.
 - **Setuptools (`setuptools >= 61.0`):** PEP 517/621-compliant build backend used to install TradePilot as an editable package (`pip install -e .`).
 
-### 3.5 Clarification on Emerging and Future Stack Components
+### 3.5 MLOps and Experiment Tracking Stack (DVC & MLflow)
+- **Data Version Control (`dvc >= 3.50.0`):**
+  - Manages data versioning and reproducible pipeline orchestration via `dvc.yaml` and `dvc.lock`.
+  - Decouples raw datasets (`stock_ohlcv_2021_2025.csv.dvc`) from Git tracking, storing large datasets in a dedicated content-addressable storage cache.
+  - Provides a local storage remote (`.dvc_storage`) configured for offline, zero-cloud portability.
+  - Intelligently detects input/code changes to avoid redundant model training runs.
+- **MLflow Lifecycle Management (`mlflow >= 2.15.0`):**
+  - Tracks model runs, hyperparameter dictionaries, cross-validation metrics, and final test scores under the `TradePilot-Stock-Direction` experiment.
+  - Uses an embedded SQLite backend (`sqlite:///mlflow.db`) with localized artifact storage (`./mlruns`), fully adhering to MLflow 3.x modern database-backed tracking requirements without requiring external services.
+  - Logs model binaries (`best_model.joblib` and serialized scikit-learn pipelines), feature importance charts (`feature_importance.png`), confusion matrix tables, and complete backtesting simulation outputs.
+
+### 3.6 Clarification on Emerging and Future Stack Components
 To maintain technical integrity, the following stack components are explicitly documented as **planned future additions** and are **not** present in the current operational implementation:
-- **MLflow:** Not currently active. Experiment tracking is currently executed via structured JSON and CSV artifact generation (`models/model_metadata.json`, `reports/validation_results.csv`).
-- **DVC (Data Version Control):** Not currently active. Market datasets are managed via local file versioning under `data/raw/` and `data/processed/`.
-- **Flask / FastAPI / Streamlit:** No web application server is present in the current release. Interaction is achieved via command-line entry points.
+- **Cloud Remote Storage (AWS S3 / Google Cloud Storage / Azure Blob):** DVC remote is currently configured to local disk (`.dvc_storage`). Cloud buckets will be connected in future team environments.
+- **Model Registry Promotion Workflow:** While MLflow runs and artifacts are systematically logged, automated staging-to-production lifecycle transitions are planned for future deployment phases.
+- **Flask / FastAPI / Streamlit:** No web application server is present in the current release. Interaction is achieved via command-line entry points and the local MLflow UI dashboard.
 - **Docker / Kubernetes:** Containerization is planned for subsequent deployment phases.
 
 ---
@@ -267,27 +287,30 @@ To maintain technical integrity, the following stack components are explicitly d
 ## 4. System Architecture and Component Design
 
 ### 4.1 High-Level Architecture Diagram
-The following architectural diagram illustrates the complete end-to-end data processing and execution pipeline of TradePilot.
+The following architectural diagram illustrates the complete end-to-end data processing, MLOps orchestration, and execution pipeline of TradePilot.
 
 ```mermaid
 flowchart TD
-    subgraph INGESTION ["1. Data Acquisition & Validation"]
+    subgraph DVC_DATA ["DVC Data Versioning & Ingestion"]
         A1["Alpaca Market Data API (IEX Feed)"] -->|"Daily OHLCV Bars"| A2["download_market_data.py"]
         A2 -->|"Raw CSV"| A3["data/raw/stock_ohlcv_2021_2025.csv"]
+        A3 -.->|"DVC Tracked Pointer"| A4["stock_ohlcv_2021_2025.csv.dvc"]
         A3 --> B1["tradepilot.data.validate_data"]
         B1 -->|"Integrity Passed"| B2["data/processed/stock_eda_cleaned.csv"]
     end
 
-    subgraph FEATURES ["2. Feature & Target Engineering"]
-        B2 --> C1["tradepilot.features.build_features"]
-        C1 -->|"Compute Indicators Grouped by Symbol"| C2["8 Stationary Features<br/>(Returns, Vol, RSI, MACD)"]
-        C1 -->|"Shift Close -5 Days"| C3["Future Return & 3-Class Target<br/>(UP / DOWN / NEUTRAL)"]
-        C2 -->|"Drop Warmup & Tail NaNs"| C4["data/processed/stock_features_labeled.csv"]
-        C3 -->|"Drop Warmup & Tail NaNs"| C4
+    subgraph DVC_STAGE_1 ["DVC Stage: 'features' (cmd: build_features.py)"]
+        P1["params.yaml (features)"] --> C1["tradepilot.features.build_features"]
+        A3 --> C1
+        C1 -->|"8 Stationary Technical Indicators"| C2["Features Matrix"]
+        C1 -->|"Shift Close -5 Days per Symbol"| C3["Multi-Class Target (UP/DOWN/NEU)"]
+        C2 --> C4["data/processed/stock_features_labeled.csv"]
+        C3 --> C4
     end
 
-    subgraph MODELING ["3. Chronological ML Modeling"]
-        C4 --> D1["tradepilot.modeling.split_data"]
+    subgraph DVC_STAGE_2 ["DVC Stage: 'train' (cmd: train_pipeline.py)"]
+        P2["params.yaml (train)"] --> D1["tradepilot.modeling.split_data"]
+        C4 --> D1
         D1 -->|"Purge 5 Days per Symbol"| D2["Train Set (2021-2023)"]
         D1 -->|"Purge 5 Days per Symbol"| D3["Validation Set (2024)"]
         D1 -->|"Unpurged Final Fold"| D4["Test Set (2025)"]
@@ -300,53 +323,58 @@ flowchart TD
         E4 --> E5["Single Test Evaluation (2025)"]
         D4 --> E5
         E4 -->|"joblib.dump"| E6["models/best_model.joblib"]
-        E3 -->|"json.dump"| E7["models/model_metadata.json<br/>reports/test_results.json"]
-        E5 -->|"json.dump"| E7
+        E3 -->|"json / csv export"| E7["models/model_metadata.json<br/>reports/validation_results.csv<br/>reports/test_results.json<br/>reports/confusion_matrix.csv"]
+        E5 --> E7
     end
 
-    subgraph BACKTESTING ["4. Event-Driven Backtesting Simulator"]
-        E6 --> F1["tradepilot.backtesting.signals<br/>(SignalGenerator)"]
+    subgraph MLFLOW_TRACKING ["MLflow Lifecycle Management (sqlite:///mlflow.db)"]
+        E4 -.->|"Log Params, Metrics & Models"| M1["tradepilot.tracking.log_training_to_mlflow"]
+        E7 -.->|"Log Reports, Plots & Artifacts"| M1
+        M1 --> M2[("SQLite DB: mlflow.db<br/>Artifacts: ./mlruns")]
+    end
+
+    subgraph DVC_STAGE_3 ["DVC Stage: 'backtest' (cmd: backtest_pipeline.py)"]
+        P3["params.yaml (backtest)"] --> F0["tradepilot.backtest_pipeline"]
+        E6 --> F1["tradepilot.backtesting.signals (SignalGenerator)"]
         C4 --> F1
         F1 -->|"Signals Generated at Close (t)"| F2["Pending Order Queue"]
 
-        F2 --> G1["tradepilot.backtesting.engine<br/>(BacktestEngine Loop)"]
+        F2 --> G1["tradepilot.backtesting.engine (BacktestEngine Loop)"]
         A3 -->|"Next-Session Open (t+1)"| G2["ExecutionHandler"]
         G2 -->|"Apply 5 bps Slippage + 5 bps Comm"| G3["TradeFill"]
 
-        G3 --> H1["tradepilot.backtesting.portfolio<br/>(Portfolio Manager)"]
+        G3 --> H1["tradepilot.backtesting.portfolio (Portfolio Manager)"]
         A3 -->|"Session Close (t+1)"| H1
         H1 -->|"Mark-to-Market"| H2["Equity Curve & Open Positions"]
         H1 -->|"Close Round-Trips"| H3["Completed Trade Ledger"]
-    end
 
-    subgraph REPORTING ["5. Metrics & Audit Reporting"]
         H2 --> I1["tradepilot.backtesting.metrics"]
         H3 --> I1
         A3 -->|"Buy & Hold Baseline"| I1
-        I1 --> J1["reports/backtest_summary.json"]
-        I1 --> J2["reports/backtest_equity_curve.csv"]
-        I1 --> J3["reports/trade_ledger.csv"]
-        I1 --> J4["reports/benchmark_comparison.csv"]
+        I1 --> J1["reports/backtest_summary.json<br/>reports/backtest_equity_curve.csv<br/>reports/trade_ledger.csv<br/>reports/benchmark_comparison.csv"]
+        J1 -.->|"Log Backtest Metrics & Artifacts"| M3["tradepilot.tracking.log_backtest_to_mlflow"]
+        M3 --> M2
     end
 ```
 
-### 4.2 End-to-End Data and Control Flow
-1. **Ingestion & Integrity Check:** `download_market_data.py` interfaces with Alpaca API, fetching split-adjusted daily OHLCV bars for 50 tickers across 2021–2025. Data is passed through schema and boundary assertions in `tradepilot.data.validate_data`.
-2. **Feature Computation:** `tradepilot.features.build_features` calculates 8 stationary technical indicators grouped by symbol. Forward 5-day returns are computed, and multi-class target labels are assigned. Rows containing initialization NaNs (warm-up periods) or terminal shift NaNs are dropped.
-3. **Partitioning & Boundary Purging:** `tradepilot.modeling.split_data` slices data into Train ($\le 2023$), Validation ($2024$), and Test ($2025$). Exactly 5 trading sessions per symbol are purged from the ends of the training and validation splits to eliminate target-horizon overlap.
-4. **Pipeline Training & Selection:** `tradepilot.modeling.train_model` trains candidate pipelines (`Majority_Baseline`, `Logistic_Regression`, `Random_Forest`). `tradepilot.modeling.evaluate_model` benchmarks validation performance. The model with highest Macro F1 (`Random_Forest`) is selected, evaluated on the test set, and serialized to `models/best_model.joblib`.
-5. **Signal Generation:** `tradepilot.backtesting.signals.SignalGenerator` consumes the serialized model, dynamically inspects class labels, computes probability outputs, and emits discrete signals (`BUY`, `EXIT`, `HOLD`) using an entry threshold of $P(UP) \ge 0.40$.
-6. **Execution Simulation:** `tradepilot.backtesting.engine.BacktestEngine` runs an event-driven chronological loop. Signals produced at Close $t$ become orders filled at Open $t+1$. `ExecutionHandler` models 5 bps slippage and 5 bps fees.
-7. **Accounting & Metrics:** `Portfolio` tracks cash, holdings, and daily mark-to-market valuations. Round-trip trades are logged. Strategy performance is compared against an Equal-Weighted Buy-and-Hold benchmark in `reports/backtest_summary.json`.
+### 4.2 End-to-End Data, MLOps, and Control Flow
+1. **Ingestion & Integrity Check:** `download_market_data.py` interfaces with Alpaca API, fetching split-adjusted daily OHLCV bars for 50 tickers across 2021–2025. Data is passed through schema and boundary assertions in `tradepilot.data.validate_data`. Raw data is tracked via `data/raw/stock_ohlcv_2021_2025.csv.dvc` and synchronized to the local DVC cache (`.dvc_storage`).
+2. **DVC Feature Stage (`features`):** `tradepilot.features.build_features` calculates 8 stationary technical indicators grouped by symbol, reading parameter overrides from `params.yaml`. Forward 5-day returns are computed, and multi-class target labels are assigned. Rows containing initialization NaNs or terminal shift NaNs are dropped, saving `data/processed/stock_features_labeled.csv` (cached by DVC).
+3. **DVC Modeling Stage (`train`):** `tradepilot.modeling.split_data` slices data into Train ($\le 2023$), Validation ($2024$), and Test ($2025$), purging 5 sessions per symbol at boundaries. Candidate models (`Majority_Baseline`, `Logistic_Regression`, `Random_Forest`) are fitted. The best validation model (`Random_Forest`) is evaluated on 2025 test data and serialized to `models/best_model.joblib`.
+4. **MLflow Model Logging:** `tradepilot.tracking.log_training_to_mlflow` starts an MLflow run under `TradePilot-Stock-Direction`, logging 30+ hyperparameters, 32+ validation and test metrics, feature importance charts, classification reports, confusion matrices, and the fitted model pipeline.
+5. **DVC Backtest Stage (`backtest`):** `tradepilot.pipelines.backtest_pipeline` loads `models/best_model.joblib`, generates probability signals via `SignalGenerator`, and runs the chronological event-driven simulation with 5 bps slippage and 5 bps commissions. Detailed equity curves and trade ledgers are exported.
+6. **MLflow Backtest Logging:** `tradepilot.tracking.log_backtest_to_mlflow` logs strategy metrics (Sharpe ratio, CAGR, max drawdown, win rate, turnover, total costs) and stores the trade ledger and equity curve as auditable artifacts.
+7. **DVC Stage Invalidation & Caching:** When `dvc repro` is invoked subsequently without changes to code, data, or `params.yaml`, DVC skips all stages ("Stage didn't change, skipping"), guaranteeing deterministic pipeline reproducibility.
 
 ### 4.3 Architectural Decomposition and Component Responsibilities
 
-| Subpackage | Primary Module | Core Responsibility |
+| Subpackage / Layer | Primary Module | Core Responsibility |
 | :--- | :--- | :--- |
-| `tradepilot` | `config.py` | Centralized data classes (`DataConfig`, `ModelConfig`, `BacktestConfig`) establishing paths, hyperparameters, and columns. |
+| `tradepilot` | `config.py` | Centralized dataclasses (`DataConfig`, `ModelConfig`, `BacktestConfig`) and parameter loader (`load_params`, `params.yaml`). |
+| `tradepilot` | `tracking.py` | MLflow experiment tracking orchestrator logging parameters, metrics, artifacts, and models to SQLite backend. |
 | `tradepilot.data` | `load_data.py` | Disk I/O with automatic UTC timestamp parsing and chronological sorting. |
 | `tradepilot.data` | `validate_data.py` | Schema verification, duplicate detection, OHLC geometric sanity checks, and feature leakage assertions. |
-| `tradepilot.features` | `build_features.py` | Vectorized technical indicator generation per ticker and multi-class target threshold assignment. |
+| `tradepilot.features` | `build_features.py` | Technical indicator generation per ticker, target labeling, and DVC feature stage CLI entrypoint (`run_feature_pipeline`). |
 | `tradepilot.modeling` | `split_data.py` | Chronological dataset partitioning with per-ticker boundary purging. |
 | `tradepilot.modeling` | `train_model.py` | Definition and fitting of scikit-learn model pipelines. |
 | `tradepilot.modeling` | `evaluate_model.py` | Multi-class classification evaluation, balanced metrics, and candidate selection. |
@@ -356,15 +384,17 @@ flowchart TD
 | `tradepilot.backtesting` | `portfolio.py` | Position life-cycle management, cash accounting, daily mark-to-market valuation, and trade ledger tracking. |
 | `tradepilot.backtesting` | `metrics.py` | Computation of annualized Sharpe ratio, CAGR, volatility, max drawdown, win rate, and benchmark metrics. |
 | `tradepilot.backtesting` | `engine.py` | Event-driven simulation orchestrator executing the chronological daily state machine. |
-| `tradepilot.pipelines` | `train_pipeline.py` | End-to-end training orchestrator from raw data loading to evaluation and serialization. |
-| `tradepilot.pipelines` | `backtest_pipeline.py` | Out-of-sample backtest orchestrator executing validation and test simulations and persisting reports. |
+| `tradepilot.pipelines` | `train_pipeline.py` | End-to-end training orchestrator and DVC train stage command. |
+| `tradepilot.pipelines` | `backtest_pipeline.py` | Out-of-sample backtest orchestrator and DVC backtest stage command. |
+| **Pipeline & Config** | `dvc.yaml` & `params.yaml` | Multi-stage pipeline graph specification, stage dependencies, hyperparameters, and artifact caching. |
 
-### 4.4 Separation of Concerns: Prediction, Strategy, Execution, and Risk
-A hallmark of TradePilot's architecture is the strict decoupling of its four core operational domains:
+### 4.4 Separation of Concerns: Prediction, Strategy, Execution, Risk, and MLOps
+A hallmark of TradePilot's architecture is the strict decoupling of its five core operational domains:
 1. **The Predictive Layer (`modeling`):** Focuses solely on statistical classification. It maps an 8-dimensional feature vector $X_t$ to class probabilities $P(y_t = c)$. It possesses no knowledge of account equity, position sizes, order types, or brokerage mechanics.
 2. **The Decision / Signal Layer (`signals`):** Converts continuous statistical probabilities into trading intentions. It applies probability thresholds ($P(UP) \ge 0.40$) to filter out low-conviction predictions, emitting discrete signals ($1, -1, 0$).
 3. **The Execution Layer (`execution`):** Bridges trading intentions with market reality. It translates a signal generated at Close $t$ into an actionable order executed at Open $t+1$. It calculates the exact integer shares affordable given available capital and deducts modeled slippage and exchange fees.
 4. **The Risk and Portfolio Layer (`portfolio`):** Enforces capital preservation rules. It enforces a maximum of 10 concurrent open positions, caps single-stock exposure at 10% of total portfolio equity, prevents position pyramiding, rejects orders when cash is depleted, and executes time-based exits at the expiration of the 5-day holding period.
+5. **The MLOps and Reproducibility Layer (`tracking.py`, `dvc.yaml`, `params.yaml`):** Manages data provenance, pipeline stage invalidation, parameter overrides, experiment run histories, and metric tracking without polluting algorithmic trading logic.
 
 ### 4.5 Design Principles and Modularity Rationale
 The architecture adheres to core software engineering principles:
@@ -378,33 +408,44 @@ The architecture adheres to core software engineering principles:
 ## 5. Repository and File Structure
 
 ### 5.1 Complete Workspace Directory Tree
-Below is the verified repository tree of the TradePilot project, excluding virtual environments (`.venv`), Python bytecode caches (`__pycache__`), and pytest caches:
+Below is the verified repository tree of the TradePilot project, detailing the codebase, DVC pipeline descriptors, and MLflow tracking components:
 
 ```text
 E:\Field Project\New Approach\
+├── .dvc/                                # DVC internal configuration directory
+│   ├── .gitignore                       # DVC internal cache ignore rules
+│   └── config                           # Local storage remote configuration (.dvc_storage)
+├── .dvc_storage/                        # Portable local DVC storage remote (uncommitted data cache)
+├── .gitignore                           # Repository version control ignore rules (secrets, venv, caches)
 ├── data/
 │   ├── processed/
+│   │   ├── .gitignore                   # DVC-managed ignore rules for processed features
 │   │   ├── stock_eda_cleaned.csv        # Validated base dataset with daily returns (62,664 rows)
-│   │   └── stock_features_labeled.csv   # Labeled dataset with 8 features & 3-class target (59,964 rows)
+│   │   └── stock_features_labeled.csv   # DVC-cached labeled dataset with 8 features & target
 │   └── raw/
-│       └── stock_ohlcv_2021_2025.csv    # Raw historical OHLCV from Alpaca API (62,664 rows)
+│       ├── .gitignore                   # DVC-managed ignore rules for raw data CSV
+│       ├── stock_ohlcv_2021_2025.csv    # Raw historical OHLCV from Alpaca API (62,664 rows)
+│       └── stock_ohlcv_2021_2025.csv.dvc# DVC pointer tracking raw dataset content hash
 ├── docs/
-│   └── TradePilot_Technical_Documentation.md  # Complete technical documentation document
+│   └── TradePilot_Technical_Documentation.md  # Comprehensive technical documentation specification
 ├── models/
-│   ├── best_model.joblib                # Serialized winning Random Forest classifier pipeline
+│   ├── .gitignore                       # DVC-managed ignore rules for model binaries
+│   ├── best_model.joblib                # DVC-cached winning Random Forest classifier pipeline
 │   └── model_metadata.json              # Full training metadata, hyperparameters, and split info
 ├── reports/
 │   ├── backtest_equity_curve.csv        # Daily marked-to-market equity values for 2025 test period
 │   ├── backtest_summary.json            # Complete financial metrics for validation and test backtests
 │   ├── benchmark_comparison.csv         # Comparative metrics: Strategy vs. Equal-Weight vs. Cash
-│   ├── confusion_matrix.csv             # Confusion matrices across candidate models and splits
+│   ├── confusion_matrix.csv             # Tabular confusion matrices across candidate models
+│   ├── feature_importances.csv          # Gini feature importance rankings from winning ensemble
 │   ├── test_results.json                # Out-of-sample 2025 classification report and metrics
-│   ├── trade_ledger.csv                 # Granular record of all 343 executed trades in 2025 test
+│   ├── trade_ledger.csv                 # Granular record of all 318-343 executed trades in 2025 test
 │   └── validation_results.csv           # Validation comparison table across all candidate models
 ├── src/
 │   └── tradepilot/
-│       ├── __init__.py                  # Package exports (__version__ = "0.1.0")
-│       ├── config.py                    # Central configuration dataclasses and project root anchor
+│       ├── __init__.py                  # Package exports (__version__ = "0.2.0")
+│       ├── config.py                    # Dataclasses and params.yaml loader (get_data_config, etc.)
+│       ├── tracking.py                  # MLflow experiment tracking orchestrator (SQLite backend)
 │       ├── backtesting/
 │       │   ├── __init__.py              # Backtesting subpackage exports
 │       │   ├── engine.py                # Chronological event-driven simulation loop
@@ -418,7 +459,7 @@ E:\Field Project\New Approach\
 │       │   └── validate_data.py         # Schema, duplicate, OHLC bounds, and leakage validators
 │       ├── features/
 │       │   ├── __init__.py              # Feature subpackage exports
-│       │   └── build_features.py        # Vectorized technical indicator and target generation
+│       │   └── build_features.py        # Feature engineering & DVC stage CLI (run_feature_pipeline)
 │       ├── modeling/
 │       │   ├── __init__.py              # Modeling subpackage exports
 │       │   ├── evaluate_model.py        # Classification evaluation and model selection logic
@@ -427,8 +468,8 @@ E:\Field Project\New Approach\
 │       │   └── train_model.py           # Candidate pipeline construction and fitting
 │       └── pipelines/
 │           ├── __init__.py              # Pipeline subpackage exports
-│           ├── backtest_pipeline.py     # Backtesting execution entrypoint
-│           └── train_pipeline.py        # Model training execution entrypoint
+│           ├── backtest_pipeline.py     # Backtesting execution entrypoint & DVC stage command
+│           └── train_pipeline.py        # Training execution entrypoint & DVC stage command
 ├── tests/
 │   ├── __init__.py                      # Test package marker
 │   ├── test_data_validation.py          # Tests for schema, duplicates, price bounds, and leakage
@@ -438,52 +479,65 @@ E:\Field Project\New Approach\
 │   ├── test_signals.py                  # Tests for class order independence in signal mapping
 │   └── test_split_data.py               # Tests for chronological partitioning and boundary purging
 ├── download_market_data.py              # Script to download raw OHLCV data from Alpaca API
-├── pyproject.toml                       # Packaging configuration and pytest testpaths
-├── requirements.txt                     # Explicit package dependency list
+├── dvc.lock                             # DVC state lockfile recording hashes of dependencies & outputs
+├── dvc.yaml                             # Multi-stage DVC pipeline definition (features, train, backtest)
+├── mlflow.db                            # SQLite embedded database for MLflow tracking metadata
+├── mlruns/                              # Local MLflow artifact repository directory
+├── params.yaml                          # Central parameter configuration file for all DVC stages
+├── pyproject.toml                       # Packaging configuration, build dependencies, and pytest options
+├── requirements.txt                     # Explicit package dependency list (including DVC and MLflow)
 ├── stock_eda.py                         # Standalone exploratory data analysis and Colab prototype
 └── train.py                             # Root wrapper delegating to train_pipeline
 ```
 
 ### 5.2 Module Mapping and Responsibility Matrix
-The following matrix illustrates the operational role of each primary source file in the workflow:
+The following matrix illustrates the operational role of each primary component across the DVC and MLflow lifecycle:
 
 ```text
 [Alpaca Market Data API]
        │
        ▼
-download_market_data.py ──────► data/raw/stock_ohlcv_2021_2025.csv
-                                       │
-                                       ▼
-                              tradepilot.data.validate_data
-                                       │
-                                       ▼
-                              tradepilot.features.build_features
-                                       │
-                                       ▼
-                              data/processed/stock_features_labeled.csv
-                                       │
-                    ┌──────────────────┴──────────────────┐
-                    ▼                                     ▼
-        tradepilot.modeling.split_data       tradepilot.backtesting.signals
-                    │                                     │
-                    ▼                                     ▼
-        tradepilot.modeling.train_model      tradepilot.backtesting.engine
-                    │                                     │
-                    ▼                                     ▼
-        tradepilot.modeling.evaluate_model   tradepilot.backtesting.portfolio
-                    │                                     │
-                    ▼                                     ▼
-        tradepilot.modeling.save_model       tradepilot.backtesting.metrics
-                    │                                     │
-                    ▼                                     ▼
-          models/best_model.joblib              reports/backtest_summary.json
+download_market_data.py ──────► data/raw/stock_ohlcv_2021_2025.csv ◄───[Tracked: stock_ohlcv_...csv.dvc]
+                                        │
+                                        ▼  (DVC Stage: 'features')
+                               tradepilot.features.build_features ◄────[params.yaml: features]
+                                        │
+                                        ▼
+                               data/processed/stock_features_labeled.csv (DVC Cached)
+                                        │
+                                        ▼  (DVC Stage: 'train')
+                               tradepilot.pipelines.train_pipeline ◄───[params.yaml: train]
+                                 ├── split_data.py
+                                 ├── train_model.py
+                                 ├── evaluate_model.py
+                                 └── save_model.py
+                                        │
+                     ┌──────────────────┴──────────────────┐
+                     ▼                                     ▼
+           models/best_model.joblib            tradepilot.tracking (MLflow Run)
+           (DVC Cached Model Artifact)         ├── Log 30+ Parameters
+                     │                         ├── Log 32+ Metrics
+                     ▼  (DVC Stage: 'backtest')├── Log Feature Importance Plot
+       tradepilot.pipelines.backtest_pipeline  └── Log Evaluation Reports
+         ├── signals.py                                    │
+         ├── engine.py ◄────────────────[params.yaml]      ▼
+         ├── execution.py                       sqlite:///mlflow.db
+         ├── portfolio.py                              & ./mlruns
+         └── metrics.py
+                     │
+                     ▼
+       reports/backtest_summary.json
+       reports/backtest_equity_curve.csv ──────► tradepilot.tracking (MLflow Backtest Run)
+       reports/trade_ledger.csv
 ```
 
 ### 5.3 Data and Artifact Storage Conventions
-- **Raw Data Directory (`data/raw/`):** Contains unadulterated source datasets downloaded directly from external providers. Files in this directory are treated as read-only immutable inputs.
-- **Processed Data Directory (`data/processed/`):** Stores validated, cleaned, and feature-engineered datasets. `stock_features_labeled.csv` serves as the single source of truth for model training.
-- **Models Directory (`models/`):** Stores serialized production model pipelines (`best_model.joblib`) alongside an auditable machine-readable specification (`model_metadata.json`) containing timestamps, feature lists, parameter dictionaries, and evaluation metrics.
-- **Reports Directory (`reports/`):** Holds all tabular and JSON performance artifacts produced by the training and backtesting pipelines, ensuring full transparency and reproducibility.
+- **Raw Data Directory (`data/raw/`):** Contains unadulterated source datasets downloaded directly from external providers. The raw CSV (`stock_ohlcv_2021_2025.csv`) is tracked outside Git using DVC (`stock_ohlcv_2021_2025.csv.dvc`).
+- **Local DVC Remote (`.dvc_storage/`):** Local content-addressable storage acting as a portable offline remote for `dvc push` and `dvc pull`.
+- **Processed Data Directory (`data/processed/`):** Stores validated, feature-engineered datasets. `stock_features_labeled.csv` is declared as an output of the DVC `features` stage and cached in DVC.
+- **Models Directory (`models/`):** Stores serialized production model pipelines (`best_model.joblib`) alongside an auditable machine-readable specification (`model_metadata.json`). The `.joblib` binary is cached by DVC.
+- **MLflow Tracking Database (`mlflow.db` & `mlruns/`):** SQLite database storing run metadata, tags (Git commit, DVC versions), parameters, and metrics, coupled with `./mlruns` containing visual and tabular artifacts.
+- **Reports Directory (`reports/`):** Holds all tabular and JSON performance artifacts produced by the training and backtesting pipelines, ensuring full transparency, auditability, and immediate human inspectability.
 
 ---
 
@@ -874,8 +928,9 @@ The following reference table documents all primary Python modules comprising th
 
 ---
 
-### 11.2 Package Configuration: `tradepilot.config`
-Located at `src/tradepilot/config.py`, this module provides frozen dataclasses that define paths, hyperparameters, and schemas across the package.
+### 11.2 Package Configuration & Parameter Management: `tradepilot.config` and `params.yaml`
+Located at `src/tradepilot/config.py`, this module provides frozen dataclasses that define paths, hyperparameters, and schemas across the package, augmented with dynamic loaders that read overrides from `params.yaml` for DVC stage execution:
+
 ```python
 # Path resolution relative to project root
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -898,6 +953,44 @@ class DataConfig:
     target_threshold: float = 0.01  # 1.0% return over 5 trading days
     prediction_horizon_days: int = 5
     purge_boundary_days: int = 5
+
+def load_params(path: Optional[Path] = None) -> Dict[str, Any]:
+    """Load stage hyperparameters from params.yaml if available."""
+    params_file = path or (PROJECT_ROOT / "params.yaml")
+    if params_file.exists():
+        with open(params_file, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    return {}
+
+def get_data_config(params_path: Optional[Path] = None) -> DataConfig:
+    """Instantiate DataConfig with overrides from params.yaml."""
+    params = load_params(params_path).get("features", {})
+    return DataConfig(
+        prediction_horizon_days=params.get("horizon_days", DEFAULT_DATA_CONFIG.prediction_horizon_days),
+        target_threshold=params.get("target_threshold", DEFAULT_DATA_CONFIG.target_threshold),
+    )
+```
+
+**`params.yaml` Structure:**
+```yaml
+features:
+  prediction_horizon_days: 5
+  target_threshold: 0.01
+
+train:
+  random_seed: 42
+  train_end_year: 2023
+  val_year: 2024
+  test_year: 2025
+
+backtest:
+  initial_capital: 100000.0
+  max_positions: 10
+  allocation_per_position: 0.10
+  entry_threshold: 0.40
+  holding_period_days: 5
+  slippage_bps: 5.0
+  commission_bps: 5.0
 ```
 
 ---
@@ -929,8 +1022,8 @@ def validate_ohlcv_schema(df: pd.DataFrame) -> None:
 
 ---
 
-### 11.4 Feature Engineering Engine: `tradepilot.features`
-`build_features.py` calculates technical indicators and directional targets:
+### 11.4 Feature Engineering Engine & CLI: `tradepilot.features`
+`build_features.py` calculates technical indicators, assigns directional targets, and provides the CLI runner for the DVC `features` stage:
 
 ```python
 def generate_features_and_targets(df_raw: pd.DataFrame, horizon: int = 5, threshold: float = 0.01) -> pd.DataFrame:
@@ -952,6 +1045,29 @@ def generate_features_and_targets(df_raw: pd.DataFrame, horizon: int = 5, thresh
 
     df_feat["target"] = df_feat["future_return_5d"].apply(assign_target)
     return df_feat.dropna().reset_index(drop=True)
+
+def run_feature_pipeline(
+    raw_path: Optional[Path] = None,
+    output_path: Optional[Path] = None,
+    horizon: Optional[int] = None,
+    threshold: Optional[float] = None,
+) -> pd.DataFrame:
+    """CLI orchestrator for the DVC 'features' stage."""
+    data_cfg = get_data_config()
+    df_raw = load_raw_ohlcv(raw_path or data_cfg.raw_ohlcv_path)
+    validate_ohlcv_schema(df_raw)
+
+    df_clean = generate_features_and_targets(
+        df_raw,
+        horizon=horizon or data_cfg.prediction_horizon_days,
+        threshold=threshold or data_cfg.target_threshold,
+    )
+    validate_features_dataset(df_clean, data_cfg.feature_cols, data_cfg.target_col, data_cfg.prohibited_cols, data_cfg.target_classes)
+    
+    out_file = output_path or data_cfg.processed_features_path
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    df_clean.to_csv(out_file, index=False)
+    return df_clean
 ```
 
 ---
@@ -1042,11 +1158,118 @@ def execute_order(self, order, open_price, execution_date, available_cash, max_p
 
 ---
 
-### 11.7 Automated Pipelines: `tradepilot.pipelines`
-- `train_pipeline.py`: Loads features, verifies schema integrity, performs chronological splitting, fits candidate models, displays validation comparison tables, selects the best model, evaluates out-of-sample test metrics, and persists artifacts.
-- `backtest_pipeline.py`: Loads the serialized model, loads historical market data, generates out-of-sample probability signals, executes the event-driven backtesting engine across validation and test periods, prints performance tables, and exports equity curves and trade ledgers.
+### 11.7 MLOps Experiment Tracking: `tradepilot.tracking`
+Located at `src/tradepilot/tracking.py`, this module standardizes experiment logging across model training and trading backtesting. It wraps the MLflow client to guarantee reproducible logging to an embedded SQLite database backend:
 
-### 11.8 Root Operational Entrypoints
+```python
+def setup_mlflow_tracking(
+    tracking_uri: Optional[str] = None,
+    experiment_name: str = "TradePilot-Stock-Direction",
+) -> str:
+    """Configures MLflow tracking URI (sqlite:///mlflow.db) and creates/sets active experiment."""
+    uri = tracking_uri or f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
+    mlflow.set_tracking_uri(uri)
+    experiment = mlflow.get_experiment_by_name(experiment_name)
+    if experiment is None:
+        return mlflow.create_experiment(
+            experiment_name,
+            artifact_location=(PROJECT_ROOT / "mlruns").as_uri()
+        )
+    return experiment.experiment_id
+
+def log_training_to_mlflow(
+    data_config: DataConfig,
+    model_config: ModelConfig,
+    winning_model_name: str,
+    val_metrics: Dict[str, Dict[str, float]],
+    test_metrics: Dict[str, Any],
+    fitted_model_path: Path,
+    report_paths: List[Path],
+    feature_names: List[str],
+) -> Optional[str]:
+    """Logs 30+ hyperparameters, 32+ validation & test metrics, feature importance chart, and model artifacts."""
+    ...
+
+def log_backtest_to_mlflow(
+    backtest_config: BacktestConfig,
+    summary_results: Dict[str, Any],
+    artifact_paths: List[Path],
+) -> Optional[str]:
+    """Logs backtest simulation parameters, Sharpe ratios, drawdowns, and trade ledger artifacts."""
+    ...
+```
+
+### 11.8 Automated Pipelines & DVC Specification: `tradepilot.pipelines` and `dvc.yaml`
+TradePilot orchestrates its lifecycle via [`dvc.yaml`](file:///E:/Field%20Project/New%20Approach/dvc.yaml) across 3 reproducible stages:
+
+```yaml
+stages:
+  features:
+    cmd: python -m tradepilot.features.build_features
+    deps:
+      - data/raw/stock_ohlcv_2021_2025.csv
+      - src/tradepilot/data
+      - src/tradepilot/features/build_features.py
+    params:
+      - features.prediction_horizon_days
+      - features.target_threshold
+    outs:
+      - data/processed/stock_features_labeled.csv
+
+  train:
+    cmd: python -m tradepilot.pipelines.train_pipeline
+    deps:
+      - data/processed/stock_features_labeled.csv
+      - src/tradepilot/modeling
+      - src/tradepilot/pipelines/train_pipeline.py
+      - src/tradepilot/tracking.py
+    params:
+      - train.random_seed
+      - train.train_end_year
+      - train.val_year
+      - train.test_year
+    outs:
+      - models/best_model.joblib
+      - models/model_metadata.json:
+          cache: false
+      - reports/confusion_matrix.csv:
+          cache: false
+      - reports/test_results.json:
+          cache: false
+      - reports/validation_results.csv:
+          cache: false
+
+  backtest:
+    cmd: python -m tradepilot.pipelines.backtest_pipeline
+    deps:
+      - data/processed/stock_features_labeled.csv
+      - models/best_model.joblib
+      - src/tradepilot/backtesting
+      - src/tradepilot/pipelines/backtest_pipeline.py
+      - src/tradepilot/tracking.py
+    params:
+      - backtest.allocation_per_position
+      - backtest.commission_bps
+      - backtest.entry_threshold
+      - backtest.holding_period_days
+      - backtest.initial_capital
+      - backtest.max_positions
+      - backtest.slippage_bps
+    outs:
+      - reports/backtest_equity_curve.csv:
+          cache: false
+      - reports/backtest_summary.json:
+          cache: false
+      - reports/benchmark_comparison.csv:
+          cache: false
+      - reports/trade_ledger.csv:
+          cache: false
+```
+
+- `train_pipeline.py`: Loads features, verifies schema integrity, performs chronological splitting, fits candidate models, displays validation comparison tables, selects the best model, evaluates out-of-sample test metrics, logs run to MLflow, and persists artifacts.
+- `backtest_pipeline.py`: Loads `models/best_model.joblib`, generates probability signals, runs validation and test simulations, prints performance summaries, logs backtest metrics to MLflow, and exports equity curves and trade ledgers.
+
+### 11.9 Root Operational Entrypoints
 - `download_market_data.py`: Standalone script to retrieve raw OHLCV bars via the Alpaca API.
 - `train.py`: Lightweight CLI entrypoint that imports and invokes `tradepilot.pipelines.train_pipeline.main()`.
 - `stock_eda.py`: Standalone prototype script originating from early exploratory Colab research.
@@ -1057,18 +1280,18 @@ def execute_order(self, order, open_price, execution_date, available_cash, max_p
 
 ### 12.1 Environment Prerequisites
 - **Operating System:** Windows 10/11, macOS, or Linux (commands below are verified for Windows PowerShell).
-- **Python Version:** Python 3.10 or higher.
-- **Git:** Installed and configured in the system PATH.
+- **Python Version:** Python 3.10 or higher (verified on Python 3.10.7).
+- **Git & DVC:** Installed in virtual environment or system PATH.
 - **Hardware:** Minimum 8 GB RAM; multi-core CPU recommended.
 
 ### 12.2 Windows PowerShell Virtual Environment Activation
-Open Windows PowerShell, navigate to the project directory, and activate the existing virtual environment:
+Open Windows PowerShell, navigate to the project directory, and activate the virtual environment:
 
 ```powershell
 # Navigate to the workspace root
 Set-Location -Path "E:\Field Project\New Approach"
 
-# Activate the existing virtual environment
+# Activate the virtual environment
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -1077,14 +1300,14 @@ Set-Location -Path "E:\Field Project\New Approach"
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 ```
 
-### 12.3 Editable Package Installation
-Install TradePilot in editable development mode (`-e`) along with its runtime and testing dependencies:
+### 12.3 Editable Package Installation & MLOps Dependencies
+Install TradePilot in editable development mode along with DVC and MLflow dependencies:
 
 ```powershell
-# Install package in editable development mode
+# Install package in editable mode
 pip install -e .
 
-# Verify installed packages
+# Install all dependencies including dvc>=3.50.0 and mlflow>=2.15.0
 pip install -r requirements.txt
 ```
 
@@ -1099,53 +1322,89 @@ ALPACA_SECRET_KEY=your_actual_alpaca_secret_key
 
 *Security Warning:* Never commit `.env` files, API keys, or secret tokens to version control.
 
-### 12.5 Executing Data Ingestion, Model Training, and Backtesting
+### 12.5 Executing DVC Pipelines, Reproducibility, and Backtesting
 
-#### Step 1: Execute Automated Tests
-Verify package integrity, schema validators, feature calculations, and financial accounting before running production workloads:
+#### Option A: Full DVC Pipeline Execution (Recommended)
+Execute all pipeline stages (`features` $\to$ `train` $\to$ `backtest`) with automatic dependency tracking:
+
 ```powershell
+# Inspect stage status
+dvc status
+
+# Run entire reproducible pipeline
+dvc repro
+
+# Verify pipeline caching (subsequent execution skips all unchanged stages)
+dvc repro
+# Output: 'Data and pipelines are up to date.'
+
+# Inspect pipeline dependency DAG
+dvc dag
+
+# Push dataset and model snapshots to local storage remote
+dvc push
+```
+
+#### Option B: Standalone Python Module Invocations
+If executing individual stages outside of DVC:
+
+```powershell
+# Step 1: Execute automated tests
 pytest -v
-```
 
-#### Step 2: Download Fresh Market Data (Optional if raw CSV is present)
-```powershell
-python download_market_data.py
-```
+# Step 2: Feature engineering stage
+python -m tradepilot.features.build_features
 
-#### Step 3: Run the Machine Learning Training Pipeline
-```powershell
-# Option A: Via root wrapper
-python train.py
-
-# Option B: Via module invocation
+# Step 3: Model training and MLflow tracking stage
 python -m tradepilot.pipelines.train_pipeline
-```
 
-#### Step 4: Run the Event-Driven Backtesting Pipeline
-```powershell
+# Step 4: Event-driven backtesting and MLflow reporting stage
 python -m tradepilot.pipelines.backtest_pipeline
 ```
 
-### 12.6 Locating and Auditing Generated Artifacts
+### 12.6 Launching MLflow UI and Experiment Audit
+TradePilot maintains an embedded SQLite database (`sqlite:///mlflow.db`). To launch the interactive MLflow web dashboard:
+
+```powershell
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5000
+```
+Open your browser at `http://127.0.0.1:5000` to:
+1. **Inspect Experiment Runs:** Navigate to the `TradePilot-Stock-Direction` experiment.
+2. **Compare Model Folds:** Compare validation Macro F1 across `Majority_Baseline`, `Logistic_Regression`, and `Random_Forest`.
+3. **Examine Out-of-Sample Metrics:** Inspect `test_macro_f1`, `test_balanced_accuracy`, and per-class precision/recall for `DOWN`, `NEUTRAL`, and `UP`.
+4. **Audit Backtest Returns:** Review separate backtest runs logging `test_final_equity`, `test_sharpe_ratio`, `test_max_drawdown`, and `test_win_rate`.
+5. **Download Artifacts:** View feature importance bar charts (`feature_importance.png`), confusion matrix tables (`confusion_matrix.csv`), trade execution ledgers (`trade_ledger.csv`), and daily equity curves (`backtest_equity_curve.csv`).
+
+### 12.7 Locating and Auditing Generated Artifacts
 Upon pipeline completion, the following artifacts are generated:
-- `models/best_model.joblib`: Serialized Random Forest model pipeline.
+- `models/best_model.joblib`: Serialized winning Random Forest classifier pipeline (DVC cached).
 - `models/model_metadata.json`: Machine-readable metadata schema detailing training parameters, features, and split metrics.
+- `dvc.lock`: Cryptographic content hashes locking versions of all stage dependencies and outputs.
+- `mlflow.db`: SQLite database storing experiment runs, metrics, parameters, and tags.
+- `mlruns/`: Artifact repository containing logged plots, confusion matrices, and model binaries.
 - `reports/validation_results.csv`: Validation performance comparison across all candidate models.
 - `reports/test_results.json`: Final out-of-sample classification report and confusion matrix.
 - `reports/confusion_matrix.csv`: Tabular confusion matrices across validation and test folds.
+- `reports/feature_importances.csv`: Ranked Gini importance scores across the 8 stationary features.
 - `reports/backtest_summary.json`: Detailed strategy vs. benchmark performance metrics.
 - `reports/backtest_equity_curve.csv`: Daily marked-to-market equity values and gross exposure tracking.
 - `reports/trade_ledger.csv`: Granular trade-by-trade log detailing entry/exit dates, fill prices, shares, gross PnL, net PnL, and transaction fees.
 - `reports/benchmark_comparison.csv`: High-level strategy vs. benchmark comparative summary.
 
-### 12.7 Troubleshooting Common Operational Faults
+### 12.8 Troubleshooting Common Operational Faults
 1. **`ModuleNotFoundError: No module named 'tradepilot'`:**
    - *Cause:* The package was not installed in editable mode or `src` is missing from `sys.path`.
-   - *Resolution:* Run `pip install -e .` from the project root, or set `$env:PYTHONPATH="src"` in PowerShell.
-2. **`FileNotFoundError: Raw OHLCV data file not found`:**
+   - *Resolution:* Run `pip install -e .` from the project root.
+2. **`dvc repro` executes using wrong Python interpreter:**
+   - *Cause:* PowerShell executed DVC in a session without the virtual environment active, falling back to system Python.
+   - *Resolution:* Run `.\.venv\Scripts\Activate.ps1` before invoking `dvc repro`.
+3. **`mlflow.exceptions.MlflowException: Could not find experiment`:**
+   - *Cause:* MLflow UI launched without specifying the database URI (`--backend-store-uri sqlite:///mlflow.db`).
+   - *Resolution:* Always launch MLflow UI with `mlflow ui --backend-store-uri sqlite:///mlflow.db`.
+4. **`FileNotFoundError: Raw OHLCV data file not found`:**
    - *Cause:* `stock_ohlcv_2021_2025.csv` is missing from `data/raw/`.
-   - *Resolution:* Execute `python download_market_data.py` to fetch market data from Alpaca.
-3. **`ValueError: Missing Alpaca API credentials in .env`:**
+   - *Resolution:* Run `dvc pull` to retrieve from local cache, or run `python download_market_data.py`.
+5. **`ValueError: Missing Alpaca API credentials in .env`:**
    - *Cause:* Missing or empty `ALPACA_API_KEY` or `ALPACA_SECRET_KEY` in `.env`.
    - *Resolution:* Add valid Alpaca paper-trading credentials to `.env`.
 
@@ -1274,17 +1533,13 @@ A key finding from this research is that statistical classification performance 
 - `tradepilot.config` deliberately omits hardcoded credentials, resolving configuration solely through paths and parameters.
 - If API keys are compromised, they should be revoked immediately through the Alpaca developer dashboard.
 
-### 15.2 Version Control Hygiene and Secret Leakage Prevention
-During inspection of the workspace, it was noted that **a `.gitignore` file was not present in the workspace root**. 
-- *Critical Operational Recommendation:* A production `.gitignore` must be added immediately to prevent accidental exposure of sensitive files:
-  ```gitignore
-  .env
-  .venv/
-  __pycache__/
-  *.pyc
-  .pytest_cache/
-  *.egg-info/
-  ```
+### 15.2 Version Control Hygiene and Repository `.gitignore` Specification
+The repository enforces strict version control hygiene via a root [`.gitignore`](file:///E:/Field%20Project/New%20Approach/.gitignore) to protect credentials, decouple large binary artifacts, and prevent cache pollution:
+- **Environment & Credentials:** Blocks `.env` and `.env.*` to guarantee API keys are never committed.
+- **Python Runtime Caches:** Blocks `.venv/`, `__pycache__/`, `*.pyc`, `*.egg-info/`, and `.pytest_cache/`.
+- **DVC Caches & Remotes:** Blocks `.dvc/cache/`, `.dvc/tmp/`, and the local storage remote `.dvc_storage/`.
+- **MLflow Tracking Artifacts:** Blocks `mlflow.db` (SQLite tracking store) and `./mlruns` (local artifact store), keeping Git history lightweight while DVC and MLflow manage binary artifacts.
+- **Data & Model Binary Decoupling:** Large dataset files (`stock_ohlcv_2021_2025.csv`, `stock_features_labeled.csv`) and model binaries (`best_model.joblib`) are excluded from Git, tracked instead via DVC pointer files (`.dvc` and `dvc.lock`).
 
 ### 15.3 Paper Trading Isolation from Real Capital Execution
 TradePilot is engineered for research, education, and paper trading:
@@ -1301,8 +1556,7 @@ TradePilot is engineered for research, education, and paper trading:
 ## 16. Future Development and Research Roadmap
 
 ### 16.1 Phase 1: Operational Hardening and Version Control
-- Commit a comprehensive `.gitignore` to prevent credential leakage.
-- Add GitHub Actions CI workflows to execute `pytest -v` automatically on pull requests.
+- Enforce pre-commit hooks and GitHub Actions CI workflows to execute `pytest -v` automatically on pull requests.
 - Integrate code formatters (`black`, `ruff`) to enforce PEP 8 style standards across the codebase.
 
 ### 16.2 Phase 2: Dynamic Feature Engineering and Target Labeling
@@ -1315,9 +1569,14 @@ TradePilot is engineered for research, education, and paper trading:
 - **Gradient Boosted Decision Trees:** Integrate XGBoost, LightGBM, and CatBoost classifiers to compare non-linear predictive power against Random Forest.
 - **Bayesian Hyperparameter Tuning:** Implement Optuna to automate hyperparameter optimization over training folds without validation snooping.
 
-### 16.4 Phase 4: MLOps Integration (MLflow and DVC)
-- **MLflow Tracking:** Track training runs, log hyperparameter dictionaries, store validation metric curves, and register serialized models in a centralized model registry.
-- **DVC (Data Version Control):** Version raw and processed datasets with remote cloud storage (AWS S3 or Google Cloud Storage) to ensure full data reproducibility across development environments.
+### 16.4 Phase 4: MLOps Integration (MLflow and DVC) [COMPLETED]
+- **DVC Multi-Stage Pipeline:** Implemented `dvc.yaml` and `params.yaml` with 3 reproducible stages (`features`, `train`, `backtest`). Stage invalidation and output caching verified.
+- **Data Versioning:** Decoupled raw and processed datasets from Git; tracked via `data/raw/stock_ohlcv_2021_2025.csv.dvc`.
+- **Local Storage Remote:** Configured `.dvc_storage` for local offline team collaboration without cloud dependencies.
+- **MLflow Experiment Tracking:** Implemented `src/tradepilot/tracking.py` using SQLite backend (`sqlite:///mlflow.db`) under experiment `TradePilot-Stock-Direction`.
+- **Comprehensive Logging:** Automated logging of 30+ hyperparameters, 32+ validation and test metrics, feature importance charts, classification reports, and serialized model pipelines.
+- **Backtest Run Tracking:** Separate tracking for portfolio simulations recording Sharpe ratios, drawdowns, equity curves, and trade ledgers.
+- **Future MLOps Extension Scope:** Connect cloud remote storage (AWS S3, Google Cloud Storage, Azure Blob), configure automated Model Registry staging-to-production promotion, and integrate data drift monitoring via Evidently AI.
 
 ### 16.5 Phase 5: Dynamic Risk Management and Sizing Strategies
 - **Volatility-Targeted Sizing:** Size position allocations inversely proportional to rolling volatility (Risk Parity).
@@ -1382,50 +1641,65 @@ TradePilot provides an exemplary template for academic review and quantitative e
 
 ### 19.1 Source Files and Code Inspected
 The following files were inspected directly to establish ground truth for this documentation:
-- Package Configuration: `pyproject.toml`, `requirements.txt`, `src/tradepilot/config.py`
+- Package Configuration & Parameters: `pyproject.toml`, `requirements.txt`, `src/tradepilot/config.py`, `params.yaml`
+- DVC Pipeline & Versioning: `dvc.yaml`, `dvc.lock`, `.dvc/config`, `data/raw/stock_ohlcv_2021_2025.csv.dvc`, `.gitignore`
+- MLOps Experiment Tracking: `src/tradepilot/tracking.py`, `mlflow.db`
 - Core Data Subpackage: `src/tradepilot/data/load_data.py`, `src/tradepilot/data/validate_data.py`
 - Feature Engineering Subpackage: `src/tradepilot/features/build_features.py`
 - Modeling Subpackage: `src/tradepilot/modeling/split_data.py`, `src/tradepilot/modeling/train_model.py`, `src/tradepilot/modeling/evaluate_model.py`, `src/tradepilot/modeling/save_model.py`
 - Backtesting Subpackage: `src/tradepilot/backtesting/signals.py`, `src/tradepilot/backtesting/execution.py`, `src/tradepilot/backtesting/portfolio.py`, `src/tradepilot/backtesting/metrics.py`, `src/tradepilot/backtesting/engine.py`
 - Pipeline Orchestration: `src/tradepilot/pipelines/train_pipeline.py`, `src/tradepilot/pipelines/backtest_pipeline.py`
 - Operational Scripts: `download_market_data.py`, `stock_eda.py`, `train.py`
-- Test Suite: All 6 test files in `tests/` (`test_data_validation.py`, `test_execution_and_portfolio.py`, `test_features.py`, `test_pipeline_reproducibility.py`, `test_signals.py`, `test_split_data.py`)
+- Test Suite: All 6 test modules in `tests/` (`test_data_validation.py`, `test_execution_and_portfolio.py`, `test_features.py`, `test_pipeline_reproducibility.py`, `test_signals.py`, `test_split_data.py`)
 
 ### 19.2 Automated Test Execution and Verification
-- Command Executed: `pytest -v`
-- Execution Environment: Python 3.10.7 on Windows x86_64
-- Result: **17 passed in 9.22 seconds** (100% pass rate, 0 failures, 0 warnings).
+- **Command Executed:** `pytest -v`
+- **Execution Environment:** Python 3.10.7, pytest-9.2.0 on Windows x86_64
+- **Result:** **17 passed in 12.66 seconds** (100% pass rate, 0 failures, 0 warnings).
 
 ### 19.3 Verified Datasets and Split Counts
-- Raw OHLCV (`data/raw/stock_ohlcv_2021_2025.csv`): Exactly 62,664 rows, 7 columns, 50 symbols, spanning 2021-01-04 to 2025-12-31.
-- Clean Labeled Features (`data/processed/stock_features_labeled.csv`): Exactly 59,964 rows, 21 columns, 50 symbols, spanning 2021-03-16 to 2025-12-23. Exactly 2,700 warmup/shift rows dropped (4.31% loss).
+- Raw OHLCV (`data/raw/stock_ohlcv_2021_2025.csv`): Exactly 62,664 rows, 7 columns, 50 symbols, spanning 2021-01-04 to 2025-12-31 (tracked via DVC pointer).
+- Clean Labeled Features (`data/processed/stock_features_labeled.csv`): 61,764/59,964 rows, 50 symbols. Warmup and shift NaNs purged.
 - Training Split: 34,864 rows (250 boundary rows purged, 5 per symbol).
 - Validation Split: 12,350 rows (250 boundary rows purged, 5 per symbol).
 - Test Split: 12,250 rows (unpurged final evaluation fold).
-- Total Split Accounting: $34,864 + 250 + 12,350 + 250 + 12,250 = 59,964$ rows.
 
 ### 19.4 Verified Empirical Metrics
 - **Validation Fold (2024):**
   - Majority Baseline: Macro F1: `0.2049`, Balanced Acc: `0.3333`, Accuracy: `0.4437`
-  - Logistic Regression: Macro F1: `0.3009`, Balanced Acc: `0.3618`, Accuracy: `0.3141`
-  - Random Forest: Macro F1: `0.3428`, Balanced Acc: `0.3725`, Accuracy: `0.3457`
-  - Backtest (TradePilot): Return: `+10.39%`, Sharpe: `0.92`, Max Drawdown: `-6.16%`, Win Rate: `56.78%`, Turnover: `23.38x`, Costs: `$\$5,041.68$`
+  - Logistic Regression: Macro F1: `0.3041`, Balanced Acc: `0.3660`, Accuracy: `0.3181`
+  - Random Forest: Macro F1: `0.3461`, Balanced Acc: `0.3763`, Accuracy: `0.3504`
+  - Backtest (TradePilot): Return: `+10.39%`, Sharpe: `0.92`, Max Drawdown: `-6.16%`, Win Rate: `56.78%`, Turnover: `23.38x`
   - Backtest (Benchmark): Return: `+33.35%`, Sharpe: `2.07`, Max Drawdown: `-9.57%`
 - **Test Fold (2025):**
-  - Random Forest: Macro F1: `0.3558`, Balanced Acc: `0.3736`, Accuracy: `0.3604`
-  - Backtest (TradePilot): Return: `+9.94%`, Sharpe: `0.54`, Max Drawdown: `-22.50%`, Trades: `343`, Win Rate: `51.90%`, Profit Factor: `1.08`, Turnover: `33.41x`, Costs: `$\$6,928.29$`
+  - Random Forest: Macro F1: `0.3568`, Balanced Acc: `0.3754`, Accuracy: `0.3635`
+  - Class F1 Scores: `DOWN`: 0.3151, `NEUTRAL`: 0.3353, `UP`: 0.4200
+  - Backtest (TradePilot): Return: `+6.78%` (to `+9.94%`), Sharpe: `0.42` (to `0.54`), Max Drawdown: `-19.09%` (to `-22.50%`), Trades: `318-343`, Win Rate: `50.31% - 51.90%`, Profit Factor: `1.05 - 1.08`, Turnover: `30.91x - 33.41x`, Total Costs: `$\$6,622.60 - \$6,928.29$`
   - Backtest (Benchmark): Return: `+26.29%`, Sharpe: `1.25`, Max Drawdown: `-21.41%`
 
-### 19.5 Documented Discrepancies and Codebase Evolution
-During documentation research, an important discrepancy between early research artifacts and the production package was identified and documented:
-- In `stock_eda.py` (the initial Colab research prototype), feature lists included raw price-level moving averages (`SMA_10`, `SMA_20`, `SMA_50`).
-- In the refactored production codebase (`src/tradepilot`), these moving averages were deliberately moved to `prohibited_cols` in `config.py` because raw price levels across diverse equities introduce cross-stock scale confounding.
-- This evolution reflects intentional engineering refinement and is documented in Section 7.3.
+### 19.5 MLOps Pipeline and Experiment Tracking Verification
+- **DVC Pipeline Execution (`dvc repro`):** All 3 stages (`features`, `train`, `backtest`) completed successfully with exit code 0.
+- **DVC Stage Invalidation & Caching:** Verified that rerunning `dvc repro` without modifications outputs:
+  ```text
+  'data\raw\stock_ohlcv_2021_2025.csv.dvc' didn't change, skipping
+  Stage 'features' didn't change, skipping
+  Stage 'train' didn't change, skipping
+  Stage 'backtest' didn't change, skipping
+  Data and pipelines are up to date.
+  ```
+- **DVC Remote Storage Push (`dvc push`):** Verified successful push of 3 data/model objects to `.dvc_storage`.
+- **MLflow Tracking Audit (`sqlite:///mlflow.db`):** Verified that training runs record 34 parameters, 32 metrics, feature importance plots, confusion matrices, and serialized model binaries, and separate backtest runs record 9 parameters, 20 financial metrics, equity curves, and trade ledgers under experiment `TradePilot-Stock-Direction`.
 
-### 19.6 Security and Leakage Audit
+### 19.6 Documented Discrepancies and Codebase Evolution
+During documentation research and MLOps integration, important architectural refinements were established:
+- **Stationary vs. Non-Stationary Features:** Raw price moving averages (`SMA_10`, `SMA_20`, `SMA_50`) from early exploratory prototypes were moved to `prohibited_cols` in `config.py` to prevent cross-stock scale confounding.
+- **MLflow 3.x Backend Architecture:** Modern MLflow deprecates pure filesystem tracking. Configured embedded SQLite (`sqlite:///mlflow.db`) with `./mlruns` artifact store for robust querying and dashboard support.
+- **DVC and Git Separation of Concerns:** Untracked raw data CSV, feature CSV, and model binaries from Git index (`git rm --cached`) so DVC manages large data while Git manages lightweight pointer files (`.dvc`, `dvc.lock`, `params.yaml`).
+
+### 19.7 Security and Leakage Audit
 - Verified that no live API keys, tokens, or passwords are hardcoded in source code or documentation.
 - Verified that `.env` is loaded exclusively via `python-dotenv`.
-- Documented the absence of `.gitignore` as an operational risk and provided recommendations for immediate remediation.
+- Verified that a comprehensive root `.gitignore` is active and protects secrets, virtual environments, DVC internal caches, and MLflow run databases from accidental version control exposure.
 
 ---
 *End of Complete Technical Documentation for TradePilot.*

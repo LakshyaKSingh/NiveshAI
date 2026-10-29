@@ -11,7 +11,7 @@ computes financial risk and return metrics, and serializes auditable reports.
 import json
 import logging
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import joblib
 import pandas as pd
@@ -25,8 +25,12 @@ from tradepilot.config import (
     BacktestConfig,
     DataConfig,
     ModelConfig,
+    get_backtest_config,
+    get_data_config,
+    get_model_config,
 )
 from tradepilot.data.load_data import load_processed_features, load_raw_ohlcv
+from tradepilot.tracking import log_backtest_to_mlflow
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,9 +41,9 @@ logger = logging.getLogger("tradepilot.backtest_pipeline")
 
 
 def run_backtest_pipeline(
-    data_config: DataConfig = DEFAULT_DATA_CONFIG,
-    model_config: ModelConfig = DEFAULT_MODEL_CONFIG,
-    backtest_config: BacktestConfig = DEFAULT_BACKTEST_CONFIG,
+    data_config: Optional[DataConfig] = None,
+    model_config: Optional[ModelConfig] = None,
+    backtest_config: Optional[BacktestConfig] = None,
 ) -> Dict[str, Any]:
     """
     Execute out-of-sample backtest evaluation on validation (2024) and test (2025) periods.
@@ -48,35 +52,39 @@ def run_backtest_pipeline(
     logger.info("Starting TradePilot Backtesting Pipeline")
     logger.info("=" * 80)
 
+    data_cfg = data_config or get_data_config()
+    model_cfg = model_config or get_model_config()
+    bt_cfg = backtest_config or get_backtest_config()
+
     # 1. Check model artifact existence
-    if not model_config.best_model_path.exists():
+    if not model_cfg.best_model_path.exists():
         raise FileNotFoundError(
-            f"Fitted model artifact not found at {model_config.best_model_path}. "
+            f"Fitted model artifact not found at {model_cfg.best_model_path}. "
             "Please run train_pipeline first."
         )
 
-    logger.info("Loading fitted model from: %s", model_config.best_model_path)
-    model_pipeline = joblib.load(model_config.best_model_path)
+    logger.info("Loading fitted model from: %s", model_cfg.best_model_path)
+    model_pipeline = joblib.load(model_cfg.best_model_path)
 
     # 2. Load market datasets
-    raw_ohlcv = load_raw_ohlcv(data_config.raw_ohlcv_path)
-    processed_features = load_processed_features(data_config.processed_features_path)
+    raw_ohlcv = load_raw_ohlcv(data_cfg.raw_ohlcv_path)
+    processed_features = load_processed_features(data_cfg.processed_features_path)
 
     # 3. Generate model signals across full timeline using backward-looking features
     logger.info("Generating model probability signals...")
     signal_gen = SignalGenerator(
         pipeline=model_pipeline,
-        feature_cols=data_config.feature_cols,
-        entry_threshold=backtest_config.entry_threshold,
+        feature_cols=data_cfg.feature_cols,
+        entry_threshold=bt_cfg.entry_threshold,
     )
     signals_df = signal_gen.generate_signals(processed_features)
 
     # 4. Initialize engine
-    engine = BacktestEngine(config=backtest_config)
+    engine = BacktestEngine(config=bt_cfg)
 
     # 5. Run Validation Backtest (2024)
-    val_start = pd.Timestamp(f"{model_config.val_year}-01-01", tz="UTC")
-    val_end = pd.Timestamp(f"{model_config.val_year}-12-31", tz="UTC")
+    val_start = pd.Timestamp(f"{model_cfg.val_year}-01-01", tz="UTC")
+    val_end = pd.Timestamp(f"{model_cfg.val_year}-12-31", tz="UTC")
     logger.info("Executing Validation Period Backtest (2024)...")
     val_result = engine.run(
         ohlcv_df=raw_ohlcv,
@@ -86,8 +94,8 @@ def run_backtest_pipeline(
     )
 
     # 6. Run Final Test Backtest (2025) using frozen settings
-    test_start = pd.Timestamp(f"{model_config.test_year}-01-01", tz="UTC")
-    test_end = pd.Timestamp(f"{model_config.test_year}-12-31", tz="UTC")
+    test_start = pd.Timestamp(f"{model_cfg.test_year}-01-01", tz="UTC")
+    test_end = pd.Timestamp(f"{model_cfg.test_year}-12-31", tz="UTC")
     logger.info("Executing Final Test Period Backtest (2025)...")
     test_result = engine.run(
         ohlcv_df=raw_ohlcv,
@@ -102,7 +110,7 @@ def run_backtest_pipeline(
     print("=" * 90)
     sm = test_result.strategy_metrics
     bm = test_result.benchmark_metrics
-    print(f"  Initial Capital            : ${backtest_config.initial_capital:,.2f}")
+    print(f"  Initial Capital            : ${bt_cfg.initial_capital:,.2f}")
     print(f"  Final Equity               : ${sm['final_equity']:,.2f}")
     print(f"  Total Return               : {sm['total_return'] * 100:>7.2f}% (Benchmark: {bm['total_return'] * 100:>7.2f}%)")
     print(f"  Annualized Return (CAGR)   : {sm['annualized_return'] * 100:>7.2f}% (Benchmark: {bm['annualized_return'] * 100:>7.2f}%)")
@@ -116,21 +124,21 @@ def run_backtest_pipeline(
     print(f"  Average Win Return         : {sm['avg_win_pct'] * 100:>7.2f}%")
     print(f"  Average Loss Return        : {sm['avg_loss_pct'] * 100:>7.2f}%")
     print(f"  Portfolio Turnover         : {sm['turnover']:>7.2f}x")
-    print(f"  Total Modeled Costs        : ${sm['total_costs']:,.2f} (Slippage: {backtest_config.slippage_bps} bps, Comm: {backtest_config.commission_bps} bps)")
+    print(f"  Total Modeled Costs        : ${sm['total_costs']:,.2f} (Slippage: {bt_cfg.slippage_bps} bps, Comm: {bt_cfg.commission_bps} bps)")
     print(f"  Average Capital Exposure   : {sm['avg_exposure'] * 100:>7.2f}%")
     print(f"  Time in Market             : {sm['time_in_market_pct'] * 100:>7.2f}%")
     print("=" * 90)
 
     # 8. Save artifacts to reports/
-    backtest_config.equity_curve_path.parent.mkdir(parents=True, exist_ok=True)
+    bt_cfg.equity_curve_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Save daily equity curve
-    test_result.equity_curve.to_csv(backtest_config.equity_curve_path, index=False)
-    logger.info("Saved daily equity curve to: %s", backtest_config.equity_curve_path)
+    test_result.equity_curve.to_csv(bt_cfg.equity_curve_path, index=False)
+    logger.info("Saved daily equity curve to: %s", bt_cfg.equity_curve_path)
 
     # Save trade ledger
-    test_result.trade_ledger.to_csv(backtest_config.trade_ledger_path, index=False)
-    logger.info("Saved trade ledger to: %s", backtest_config.trade_ledger_path)
+    test_result.trade_ledger.to_csv(bt_cfg.trade_ledger_path, index=False)
+    logger.info("Saved trade ledger to: %s", bt_cfg.trade_ledger_path)
 
     # Save benchmark comparison
     bench_records = [
@@ -162,8 +170,8 @@ def run_backtest_pipeline(
             "max_drawdown": 0.0,
         },
     ]
-    pd.DataFrame(bench_records).to_csv(backtest_config.benchmark_comparison_path, index=False)
-    logger.info("Saved benchmark comparison to: %s", backtest_config.benchmark_comparison_path)
+    pd.DataFrame(bench_records).to_csv(bt_cfg.benchmark_comparison_path, index=False)
+    logger.info("Saved benchmark comparison to: %s", bt_cfg.benchmark_comparison_path)
 
     # Save full summary JSON
     summary_data = {
@@ -177,9 +185,15 @@ def run_backtest_pipeline(
         },
         "config": test_result.config,
     }
-    with open(backtest_config.summary_metrics_path, "w", encoding="utf-8") as f:
+    with open(bt_cfg.summary_metrics_path, "w", encoding="utf-8") as f:
         json.dump(summary_data, f, indent=2)
-    logger.info("Saved backtest summary JSON to: %s", backtest_config.summary_metrics_path)
+    logger.info("Saved backtest summary JSON to: %s", bt_cfg.summary_metrics_path)
+
+    # 9. Log backtest metrics and reports to MLflow
+    log_backtest_to_mlflow(
+        summary_data=summary_data,
+        backtest_config=bt_cfg,
+    )
 
     logger.info("Backtesting pipeline completed successfully.")
     return summary_data

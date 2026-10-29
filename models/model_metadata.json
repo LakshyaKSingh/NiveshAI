@@ -1,6 +1,6 @@
 {
   "project": "TradePilot ML Stock Direction Prediction",
-  "timestamp_utc": "2026-10-27T22:27:35.120391+00:00",
+  "timestamp_utc": "2026-10-29T02:15:59.890417+00:00",
   "random_seed": 42,
   "selected_model": "Random_Forest",
   "features": [
@@ -22,9 +22,9 @@
   ],
   "target_definition": "future_return_5d > 0.01 -> UP, future_return_5d < -0.01 -> DOWN, otherwise NEUTRAL",
   "split_periods": {
-    "train_rows": 34864,
+    "train_rows": 36664,
     "train_purged_rows": 250,
-    "train_start": "2021-03-16",
+    "train_start": "2021-01-22",
     "train_end": "2023-12-21",
     "val_rows": 12350,
     "val_purged_rows": 250,
@@ -59,10 +59,10 @@
     "verbose": "0",
     "warm_start": "False"
   },
-  "validation_macro_f1": 0.3427885534075971,
-  "validation_balanced_accuracy": 0.3725102552203321,
-  "validation_accuracy": 0.345748987854251,
-  "test_macro_f1": 0.3557658894804481,
-  "test_balanced_accuracy": 0.3736015765301142,
-  "test_accuracy": 0.3604081632653061
+  "validation_macro_f1": 0.3461109299194664,
+  "validation_balanced_accuracy": 0.37625924555906426,
+  "validation_accuracy": 0.35044534412955464,
+  "test_macro_f1": 0.3568270523918768,
+  "test_balanced_accuracy": 0.37535424025947384,
+  "test_accuracy": 0.36351020408163265
 }

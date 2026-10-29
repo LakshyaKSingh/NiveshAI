@@ -6,7 +6,8 @@ without forward lookahead leakage in features.
 """
 
 import logging
-from typing import Tuple
+from pathlib import Path
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -138,3 +139,55 @@ def generate_features_and_targets(
     df_clean = df_feat.dropna().reset_index(drop=True)
     logger.info("Generated feature dataset: %d rows remaining after dropna", len(df_clean))
     return df_clean
+
+
+def run_feature_pipeline(
+    raw_path: Optional[Path] = None,
+    output_path: Optional[Path] = None,
+    horizon: Optional[int] = None,
+    threshold: Optional[float] = None,
+) -> pd.DataFrame:
+    """
+    Execute feature engineering and target labeling stage:
+    Loads raw OHLCV, validates schema, generates features, validates output, and writes to CSV.
+    """
+    from tradepilot.config import get_data_config
+    from tradepilot.data.load_data import load_raw_ohlcv
+    from tradepilot.data.validate_data import validate_features_dataset, validate_ohlcv_schema
+
+    data_cfg = get_data_config()
+    target_horizon = horizon if horizon is not None else data_cfg.prediction_horizon_days
+    target_thresh = threshold if threshold is not None else data_cfg.target_threshold
+    out_file = output_path or data_cfg.processed_features_path
+    in_file = raw_path or data_cfg.raw_ohlcv_path
+
+    logger.info("Starting Feature Pipeline: raw=%s -> out=%s", in_file, out_file)
+    df_raw = load_raw_ohlcv(in_file)
+    validate_ohlcv_schema(df_raw)
+
+    df_clean = generate_features_and_targets(df_raw, horizon=target_horizon, threshold=target_thresh)
+    validate_features_dataset(
+        df_clean,
+        feature_cols=data_cfg.feature_cols,
+        target_col=data_cfg.target_col,
+        prohibited_cols=data_cfg.prohibited_cols,
+        expected_classes=data_cfg.target_classes,
+    )
+
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    df_clean.to_csv(out_file, index=False)
+    logger.info("Successfully persisted labeled features to: %s (%d rows)", out_file, len(df_clean))
+    return df_clean
+
+
+def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    run_feature_pipeline()
+
+
+if __name__ == "__main__":
+    main()

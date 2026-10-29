@@ -8,7 +8,8 @@ Secrets and API credentials are kept out of this configuration.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Set
+from typing import Any, Dict, List, Optional, Set
+import yaml
 
 
 # Project root resolution: src/tradepilot/config.py -> parent x 3 = project root
@@ -102,3 +103,56 @@ class BacktestConfig:
 DEFAULT_DATA_CONFIG = DataConfig()
 DEFAULT_MODEL_CONFIG = ModelConfig()
 DEFAULT_BACKTEST_CONFIG = BacktestConfig()
+
+
+def load_params(path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Load pipeline parameters from params.yaml if available.
+    Falls back to an empty dictionary if the file does not exist.
+    """
+    params_file = path or (PROJECT_ROOT / "params.yaml")
+    if params_file.exists():
+        try:
+            with open(params_file, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        except Exception:
+            return {}
+    return {}
+
+
+def get_data_config(params_path: Optional[Path] = None) -> DataConfig:
+    """Instantiate DataConfig with overrides from params.yaml if present."""
+    params = load_params(params_path).get("features", {})
+    horizon = params.get("horizon_days", DEFAULT_DATA_CONFIG.prediction_horizon_days)
+    threshold = params.get("target_threshold", DEFAULT_DATA_CONFIG.target_threshold)
+    return DataConfig(
+        prediction_horizon_days=horizon,
+        target_threshold=threshold,
+    )
+
+
+def get_model_config(params_path: Optional[Path] = None) -> ModelConfig:
+    """Instantiate ModelConfig with overrides from params.yaml if present."""
+    params = load_params(params_path).get("train", {})
+    return ModelConfig(
+        random_seed=params.get("random_seed", DEFAULT_MODEL_CONFIG.random_seed),
+        train_end_year=params.get("train_end_year", DEFAULT_MODEL_CONFIG.train_end_year),
+        val_year=params.get("val_year", DEFAULT_MODEL_CONFIG.val_year),
+        test_year=params.get("test_year", DEFAULT_MODEL_CONFIG.test_year),
+    )
+
+
+def get_backtest_config(params_path: Optional[Path] = None) -> BacktestConfig:
+    """Instantiate BacktestConfig with overrides from params.yaml if present."""
+    params = load_params(params_path).get("backtest", {})
+    return BacktestConfig(
+        initial_capital=float(params.get("initial_capital", DEFAULT_BACKTEST_CONFIG.initial_capital)),
+        max_positions=int(params.get("max_positions", DEFAULT_BACKTEST_CONFIG.max_positions)),
+        allocation_per_position=float(params.get("allocation_per_position", DEFAULT_BACKTEST_CONFIG.allocation_per_position)),
+        entry_threshold=float(params.get("entry_threshold", DEFAULT_BACKTEST_CONFIG.entry_threshold)),
+        holding_period_days=int(params.get("holding_period_days", DEFAULT_BACKTEST_CONFIG.holding_period_days)),
+        slippage_bps=float(params.get("slippage_bps", DEFAULT_BACKTEST_CONFIG.slippage_bps)),
+        commission_bps=float(params.get("commission_bps", DEFAULT_BACKTEST_CONFIG.commission_bps)),
+        allow_short=bool(params.get("allow_short", DEFAULT_BACKTEST_CONFIG.allow_short)),
+        benchmark_name=str(params.get("benchmark_name", DEFAULT_BACKTEST_CONFIG.benchmark_name)),
+    )

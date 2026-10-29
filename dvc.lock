@@ -1,0 +1,152 @@
+schema: '2.0'
+stages:
+  features:
+    cmd: python -m tradepilot.features.build_features
+    deps:
+    - path: data/raw/stock_ohlcv_2021_2025.csv
+      hash: md5
+      md5: 7c345eed43c2022a5e0a93be6fc5f18c
+      size: 4169377
+    - path: src/tradepilot/data/load_data.py
+      hash: md5
+      md5: 5299cf2bb792a8ee6742fd53ce5ca9f4
+      size: 2344
+    - path: src/tradepilot/data/validate_data.py
+      hash: md5
+      md5: 2bb83283b22e5ad4de79334caabb4b5e
+      size: 4769
+    - path: src/tradepilot/features/build_features.py
+      hash: md5
+      md5: 22e966791dc9d1727c9a05dd14ae94e0
+      size: 6403
+    params:
+      params.yaml:
+        features.horizon_days: 5
+        features.target_threshold: 0.01
+    outs:
+    - path: data/processed/stock_features_labeled.csv
+      hash: md5
+      md5: b63e9578ee20902e832824bd24641446
+      size: 15609766
+  train:
+    cmd: python -m tradepilot.pipelines.train_pipeline
+    deps:
+    - path: data/processed/stock_features_labeled.csv
+      hash: md5
+      md5: b63e9578ee20902e832824bd24641446
+      size: 15609766
+    - path: src/tradepilot/modeling/evaluate_model.py
+      hash: md5
+      md5: 2ce62440127a69a4e44a5d094ca7ac70
+      size: 2930
+    - path: src/tradepilot/modeling/save_model.py
+      hash: md5
+      md5: b6d849a6f8c14234e13f60c0cd1c83be
+      size: 5773
+    - path: src/tradepilot/modeling/split_data.py
+      hash: md5
+      md5: 7897d72bfff52358fb73ffbf02bddd7a
+      size: 4423
+    - path: src/tradepilot/modeling/train_model.py
+      hash: md5
+      md5: 6a90c350873c9e67fa18369f214b736f
+      size: 2369
+    - path: src/tradepilot/pipelines/train_pipeline.py
+      hash: md5
+      md5: 7a584c02abf7056664ee2d8649ed354a
+      size: 6762
+    - path: src/tradepilot/tracking.py
+      hash: md5
+      md5: a15ed6711c9348eeef74d786875724aa
+      size: 12993
+    params:
+      params.yaml:
+        train.purge_boundary_days: 5
+        train.random_seed: 42
+        train.test_year: 2025
+        train.train_end_year: 2023
+        train.val_year: 2024
+    outs:
+    - path: models/best_model.joblib
+      hash: md5
+      md5: ac4d1b663ea4cd561293c6bb6ee81e45
+      size: 3074426
+    - path: reports/confusion_matrix.csv
+      hash: md5
+      md5: 85767ab333bf4356635a1ea936b014a1
+      size: 656
+    - path: reports/test_results.json
+      hash: md5
+      md5: a7b136a9850b031509265771b0b97afb
+      size: 974
+    - path: reports/validation_results.csv
+      hash: md5
+      md5: e9de0c83f359cdd84aecb3784d1a1724
+      size: 793
+  backtest:
+    cmd: python -m tradepilot.pipelines.backtest_pipeline
+    deps:
+    - path: data/processed/stock_features_labeled.csv
+      hash: md5
+      md5: b63e9578ee20902e832824bd24641446
+      size: 15609766
+    - path: data/raw/stock_ohlcv_2021_2025.csv
+      hash: md5
+      md5: 7c345eed43c2022a5e0a93be6fc5f18c
+      size: 4169377
+    - path: models/best_model.joblib
+      hash: md5
+      md5: ac4d1b663ea4cd561293c6bb6ee81e45
+      size: 3074426
+    - path: src/tradepilot/backtesting/engine.py
+      hash: md5
+      md5: 18a1a0b7ace8252b6cad5725de4d9cc3
+      size: 9365
+    - path: src/tradepilot/backtesting/execution.py
+      hash: md5
+      md5: 66e72d9eeeb479b88ac954cddec0710e
+      size: 4959
+    - path: src/tradepilot/backtesting/metrics.py
+      hash: md5
+      md5: ac577110d8e388681313a5c89f7968ba
+      size: 6965
+    - path: src/tradepilot/backtesting/portfolio.py
+      hash: md5
+      md5: fa5153da820e47028168f33d0a2278c3
+      size: 7402
+    - path: src/tradepilot/backtesting/signals.py
+      hash: md5
+      md5: 190e533886bbc3d06952ed2a3a6b0645
+      size: 3975
+    - path: src/tradepilot/pipelines/backtest_pipeline.py
+      hash: md5
+      md5: 8f806d4adbd31c10af4fcc4d12e4e765
+      size: 8153
+    - path: src/tradepilot/tracking.py
+      hash: md5
+      md5: a15ed6711c9348eeef74d786875724aa
+      size: 12993
+    params:
+      params.yaml:
+        backtest.allocation_per_position: 0.1
+        backtest.allow_short: false
+        backtest.benchmark_name: Buy_and_Hold_Equal_Weight
+        backtest.commission_bps: 5.0
+        backtest.entry_threshold: 0.4
+        backtest.holding_period_days: 5
+        backtest.initial_capital: 100000.0
+        backtest.max_positions: 10
+        backtest.slippage_bps: 5.0
+    outs:
+    - path: reports/backtest_equity_curve.csv
+      hash: md5
+      md5: 796f0a827e16f8ca1383cfc8480395c5
+      size: 34508
+    - path: reports/backtest_summary.json
+      hash: md5
+      md5: 23d4c31a99004d6707b962544b5f33f2
+      size: 2368
+    - path: reports/benchmark_comparison.csv
+      hash: md5
+      md5: 0ce1be713b35b4cfa9ad8b78de4c07ae
+      size: 409
